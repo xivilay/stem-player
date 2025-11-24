@@ -1,0 +1,196 @@
+#include "MainScreen.h"
+#include "../PluginProcessor.h"
+#include "../PluginEditor.h"
+#include "LookAndFeel.h"
+
+MainScreen::MainScreen(StemPlayerAudioProcessor& processor, 
+                        StemPlayerAudioProcessorEditor& ed)
+    : audioProcessor(processor), editor(ed)
+{
+    // Title
+    titleLabel.setText("Now Playing", juce::dontSendNotification);
+    titleLabel.setFont(juce::Font(14.0f));
+    titleLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textSecondary);
+    titleLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(titleLabel);
+    
+    // Song name
+    songNameLabel.setFont(juce::Font(24.0f, juce::Font::bold));
+    songNameLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textPrimary);
+    songNameLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(songNameLabel);
+    
+    // Back button
+    backButton.setButtonText("< Back");
+    backButton.onClick = [this]() {
+        audioProcessor.getStemEngine().stop();
+        editor.showScreen(StemPlayerAudioProcessor::Screen::Selection);
+    };
+    addAndMakeVisible(backButton);
+    
+    // Play/Pause button
+    playPauseButton.setButtonText("Play");
+    playPauseButton.onClick = [this]() {
+        audioProcessor.getStemEngine().togglePlayPause();
+        updateTransportButtons();
+    };
+    addAndMakeVisible(playPauseButton);
+    
+    // Stop button
+    stopButton.setButtonText("Stop");
+    stopButton.onClick = [this]() {
+        audioProcessor.getStemEngine().stop();
+        updateTransportButtons();
+    };
+    addAndMakeVisible(stopButton);
+    
+    // Time display
+    timeLabel.setFont(juce::Font(14.0f, juce::Font::FontStyleFlags::plain));
+    timeLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textSecondary);
+    timeLabel.setJustificationType(juce::Justification::centred);
+    timeLabel.setText("0:00 / 0:00", juce::dontSendNotification);
+    addAndMakeVisible(timeLabel);
+    
+    // Tracks viewport
+    tracksViewport.setViewedComponent(&tracksContainer, false);
+    tracksViewport.setScrollBarsShown(true, false);
+    addAndMakeVisible(tracksViewport);
+    
+    // Set up MIDI learn callback
+    audioProcessor.getMidiLearnManager().onMappingChanged = [this]() {
+        for (auto& trackComp : trackComponents)
+            trackComp->updateMidiMappingDisplay();
+    };
+}
+
+MainScreen::~MainScreen()
+{
+    audioProcessor.getMidiLearnManager().onMappingChanged = nullptr;
+}
+
+void MainScreen::paint(juce::Graphics& g)
+{
+    g.fillAll(StemPlayerLookAndFeel::backgroundDark);
+    
+    // Subtle gradient at top
+    juce::ColourGradient gradient(
+        StemPlayerLookAndFeel::accentSecondary.withAlpha(0.08f), 
+        (float)getWidth() * 0.5f, 0,
+        juce::Colours::transparentBlack, 
+        (float)getWidth() * 0.5f, 150, false);
+    g.setGradientFill(gradient);
+    g.fillRect(getLocalBounds().removeFromTop(150));
+}
+
+void MainScreen::resized()
+{
+    auto bounds = getLocalBounds();
+    
+    // Header area
+    auto header = bounds.removeFromTop(120);
+    header.reduce(20, 15);
+    
+    // Back button in top left
+    backButton.setBounds(header.removeFromLeft(80).removeFromTop(30));
+    header.removeFromLeft(10);
+    
+    // Title and song name centered
+    auto titleArea = header.reduced(80, 0);
+    titleLabel.setBounds(titleArea.removeFromTop(20));
+    songNameLabel.setBounds(titleArea.removeFromTop(36));
+    
+    // Transport controls
+    auto transportArea = titleArea.removeFromTop(50);
+    auto transportBounds = transportArea.withSizeKeepingCentre(300, 40);
+    
+    playPauseButton.setBounds(transportBounds.removeFromLeft(90));
+    transportBounds.removeFromLeft(10);
+    stopButton.setBounds(transportBounds.removeFromLeft(70));
+    transportBounds.removeFromLeft(10);
+    timeLabel.setBounds(transportBounds);
+    
+    // Tracks area
+    bounds.removeFromTop(10);
+    tracksViewport.setBounds(bounds.reduced(15, 0));
+    
+    // Update tracks container size
+    int trackHeight = 140;
+    int spacing = 10;
+    int totalHeight = (int)trackComponents.size() * (trackHeight + spacing);
+    tracksContainer.setSize(tracksViewport.getWidth() - 20, 
+                           juce::jmax(totalHeight, tracksViewport.getHeight()));
+    
+    // Layout track components
+    int y = 0;
+    for (auto& trackComp : trackComponents)
+    {
+        trackComp->setBounds(0, y, tracksContainer.getWidth(), trackHeight);
+        y += trackHeight + spacing;
+    }
+}
+
+void MainScreen::songLoaded(const juce::String& songName)
+{
+    songNameLabel.setText(songName, juce::dontSendNotification);
+    createTrackComponents();
+    updateTransportButtons();
+    resized();
+}
+
+void MainScreen::createTrackComponents()
+{
+    trackComponents.clear();
+    
+    auto& engine = audioProcessor.getStemEngine();
+    int numTracks = engine.getNumTracks();
+    
+    for (int i = 0; i < numTracks; ++i)
+    {
+        auto trackComp = std::make_unique<StemTrackComponent>(i, 
+                            audioProcessor.getMidiLearnManager());
+        
+        trackComp->setTrack(engine.getTrack(i));
+        
+        trackComp->onVolumeChanged = [this](int trackIndex, float volume) {
+            audioProcessor.getStemEngine().setTrackVolume(trackIndex, volume);
+        };
+        
+        trackComp->onPositionChanged = [this](double pos) {
+            audioProcessor.getStemEngine().setPositionNormalized(pos);
+        };
+        
+        tracksContainer.addAndMakeVisible(trackComp.get());
+        trackComponents.push_back(std::move(trackComp));
+    }
+}
+
+void MainScreen::updatePlaybackPosition()
+{
+    auto& engine = audioProcessor.getStemEngine();
+    double pos = engine.getPositionNormalized();
+    
+    for (auto& trackComp : trackComponents)
+        trackComp->updatePlaybackPosition(pos);
+    
+    // Update time display
+    double currentTime = engine.getPositionInSeconds();
+    double totalTime = engine.getTotalLengthInSeconds();
+    timeLabel.setText(formatTime(currentTime) + " / " + formatTime(totalTime), 
+                      juce::dontSendNotification);
+    
+    updateTransportButtons();
+}
+
+void MainScreen::updateTransportButtons()
+{
+    bool isPlaying = audioProcessor.getStemEngine().isPlaying();
+    playPauseButton.setButtonText(isPlaying ? "Pause" : "Play");
+}
+
+juce::String MainScreen::formatTime(double seconds)
+{
+    int mins = static_cast<int>(seconds) / 60;
+    int secs = static_cast<int>(seconds) % 60;
+    return juce::String(mins) + ":" + juce::String(secs).paddedLeft('0', 2);
+}
+
