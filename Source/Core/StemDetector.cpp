@@ -33,7 +33,17 @@ juce::Array<StemPattern> StemDetector::getDefaultPatterns()
     defaults.add({ "Synth", "_synth" });
     defaults.add({ "Strings", "_strings" });
     
-    // Parentheses patterns
+    // Underscore + parentheses patterns
+    defaults.add({ "Vocals", "_(Vocals)" });
+    defaults.add({ "Vocals", "_(Vocal)" });
+    defaults.add({ "Drums", "_(Drums)" });
+    defaults.add({ "Drums", "_(Drum)" });
+    defaults.add({ "Bass", "_(Bass)" });
+    defaults.add({ "Other", "_(Other)" });
+    defaults.add({ "Piano", "_(Piano)" });
+    defaults.add({ "Guitar", "_(Guitar)" });
+    
+    // Space + parentheses patterns
     defaults.add({ "Vocals", " (Vocals)" });
     defaults.add({ "Vocals", " (Vocal)" });
     defaults.add({ "Drums", " (Drums)" });
