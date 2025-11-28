@@ -6,7 +6,8 @@
 class StemPlayerAudioProcessor;
 class StemPlayerAudioProcessorEditor;
 
-class MainScreen : public juce::Component
+class MainScreen : public juce::Component,
+                   public juce::KeyListener
 {
 public:
     MainScreen(StemPlayerAudioProcessor& processor, 
@@ -15,6 +16,9 @@ public:
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+    void visibilityChanged() override;
+    
+    bool keyPressed(const juce::KeyPress& key, juce::Component* originatingComponent) override;
     
     void songLoaded(const juce::String& songName);
     void updatePlaybackPosition();

@@ -55,10 +55,63 @@ MainScreen::MainScreen(StemPlayerAudioProcessor& processor,
     tracksViewport.setViewedComponent(&tracksContainer, false);
     tracksViewport.setScrollBarsShown(true, false);
     addAndMakeVisible(tracksViewport);
+    
+    // Enable keyboard focus
+    setWantsKeyboardFocus(true);
+    addKeyListener(this);
 }
 
 MainScreen::~MainScreen()
 {
+    removeKeyListener(this);
+}
+
+void MainScreen::visibilityChanged()
+{
+    if (isVisible())
+        grabKeyboardFocus();
+}
+
+bool MainScreen::keyPressed(const juce::KeyPress& key, juce::Component* /*originatingComponent*/)
+{
+    // Space bar - Play/Pause
+    if (key == juce::KeyPress::spaceKey)
+    {
+        audioProcessor.getStemEngine().togglePlayPause();
+        updateTransportButtons();
+        return true;
+    }
+    
+    // Left arrow - Rewind
+    if (key == juce::KeyPress::leftKey)
+    {
+        audioProcessor.getStemEngine().rewind();
+        return true;
+    }
+    
+    // Right arrow - Fast Forward
+    if (key == juce::KeyPress::rightKey)
+    {
+        audioProcessor.getStemEngine().fastForward();
+        return true;
+    }
+    
+    // Escape or S - Stop
+    if (key == juce::KeyPress::escapeKey || key.getTextCharacter() == 's' || key.getTextCharacter() == 'S')
+    {
+        audioProcessor.getStemEngine().stop();
+        updateTransportButtons();
+        return true;
+    }
+    
+    // Home - Go to start
+    if (key == juce::KeyPress::homeKey)
+    {
+        audioProcessor.getStemEngine().setPosition(0);
+        return true;
+    }
+    
+    return false;
 }
 
 void MainScreen::paint(juce::Graphics& g)
