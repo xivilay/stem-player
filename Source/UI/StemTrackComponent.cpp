@@ -81,6 +81,16 @@ void StemTrackComponent::setShowSeparateChannels(bool separate)
     waveformDisplay.setShowSeparateChannels(separate);
 }
 
+void StemTrackComponent::setDrawPlayhead(bool shouldDraw)
+{
+    waveformDisplay.setDrawPlayhead(shouldDraw);
+}
+
+juce::Rectangle<int> StemTrackComponent::getWaveformBounds() const
+{
+    return waveformDisplay.getBounds().translated(getX(), getY());
+}
+
 void StemTrackComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();

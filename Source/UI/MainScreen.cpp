@@ -3,9 +3,80 @@
 #include "../PluginEditor.h"
 #include "LookAndFeel.h"
 
+// PlayheadOverlay implementation
+PlayheadOverlay::PlayheadOverlay(MainScreen& owner)
+    : mainScreen(owner)
+{
+    setInterceptsMouseClicks(true, false);
+}
+
+void PlayheadOverlay::paint(juce::Graphics& g)
+{
+    if (getWidth() <= 0)
+        return;
+    
+    if (playbackPosition >= 0.0 && playbackPosition <= 1.0)
+    {
+        // The overlay is now sized to match the waveform area exactly
+        float playheadX = 4.0f + (float)playbackPosition * ((float)getWidth() - 8.0f);
+        
+        // Glow effect
+        g.setColour(StemPlayerLookAndFeel::playheadColor.withAlpha(0.3f));
+        g.fillRoundedRectangle(playheadX - 5.0f, 0.0f, 
+                               10.0f, (float)getHeight(), 2.0f);
+        
+        // Main playhead line
+        g.setColour(StemPlayerLookAndFeel::playheadColor);
+        g.fillRoundedRectangle(playheadX - 1.5f, 0.0f, 
+                               3.0f, (float)getHeight(), 1.5f);
+        
+        // Top and bottom caps for visibility
+        g.fillEllipse(playheadX - 5.0f, -2.0f, 10.0f, 10.0f);
+        g.fillEllipse(playheadX - 5.0f, (float)getHeight() - 8.0f, 10.0f, 10.0f);
+    }
+}
+
+void PlayheadOverlay::mouseDown(const juce::MouseEvent& event)
+{
+    if (waveformArea.isEmpty())
+        return;
+    
+    // The overlay is now positioned directly over the waveform area
+    // so event.position.x is already relative to the waveform
+    float relativeX = event.position.x - 4.0f;
+    float width = (float)getWidth() - 8.0f;
+    
+    double newPosition = juce::jlimit(0.0, 1.0, (double)(relativeX / width));
+    playbackPosition = newPosition;
+    repaint();
+    
+    if (onPositionChanged)
+        onPositionChanged(newPosition);
+}
+
+void PlayheadOverlay::mouseDrag(const juce::MouseEvent& event)
+{
+    mouseDown(event);
+}
+
+void PlayheadOverlay::setPlaybackPosition(double normalizedPosition)
+{
+    if (std::abs(playbackPosition - normalizedPosition) > 0.001)
+    {
+        playbackPosition = normalizedPosition;
+        repaint();
+    }
+}
+
+void PlayheadOverlay::setWaveformBounds(juce::Rectangle<int> bounds)
+{
+    waveformArea = bounds;
+}
+
+// MainScreen implementation
 MainScreen::MainScreen(StemPlayerAudioProcessor& processor, 
                         StemPlayerAudioProcessorEditor& ed)
-    : audioProcessor(processor), editor(ed)
+    : audioProcessor(processor), editor(ed), playheadOverlay(*this)
 {
     // Title
     titleLabel.setText("Now Playing", juce::dontSendNotification);
@@ -55,6 +126,12 @@ MainScreen::MainScreen(StemPlayerAudioProcessor& processor,
     tracksViewport.setViewedComponent(&tracksContainer, false);
     tracksViewport.setScrollBarsShown(true, false);
     addAndMakeVisible(tracksViewport);
+    
+    // Playhead overlay (added after viewport so it's on top)
+    playheadOverlay.onPositionChanged = [this](double pos) {
+        audioProcessor.getStemEngine().setPositionNormalized(pos);
+    };
+    addAndMakeVisible(playheadOverlay);
     
     // Enable keyboard focus
     setWantsKeyboardFocus(true);
@@ -157,7 +234,8 @@ void MainScreen::resized()
     
     // Tracks area
     bounds.removeFromTop(10);
-    tracksViewport.setBounds(bounds.reduced(15, 0));
+    auto viewportBounds = bounds.reduced(15, 0);
+    tracksViewport.setBounds(viewportBounds);
     
     // Update tracks container size
     int trackHeight = 140;
@@ -173,6 +251,9 @@ void MainScreen::resized()
         trackComp->setBounds(0, y, tracksContainer.getWidth(), trackHeight);
         y += trackHeight + spacing;
     }
+    
+    // Position and size playhead overlay will be set in updatePlayheadOverlay
+    updatePlayheadOverlay();
 }
 
 void MainScreen::songLoaded(const juce::String& songName)
@@ -196,6 +277,7 @@ void MainScreen::createTrackComponents()
         auto trackComp = std::make_unique<StemTrackComponent>(i);
         
         trackComp->setTrack(engine.getTrack(i));
+        trackComp->setDrawPlayhead(false);  // Disable individual playheads
         
         trackComp->onVolumeChanged = [this](int trackIndex, float volume) {
             audioProcessor.getStemEngine().setTrackVolume(trackIndex, volume);
@@ -210,11 +292,46 @@ void MainScreen::createTrackComponents()
     }
 }
 
+void MainScreen::updatePlayheadOverlay()
+{
+    // Calculate the waveform area bounds and position the overlay only over waveforms
+    if (!trackComponents.empty())
+    {
+        // Get bounds of first track's waveform to determine horizontal extent
+        auto firstTrackBounds = trackComponents[0]->getWaveformBounds();
+        
+        // Get viewport bounds relative to this component
+        auto viewportBounds = tracksViewport.getBounds();
+        
+        // Calculate the waveform X position relative to the main screen
+        // firstTrackBounds is relative to tracksContainer
+        int waveformLocalX = firstTrackBounds.getX();
+        int waveformWidth = firstTrackBounds.getWidth();
+        
+        // Account for viewport position and scroll
+        auto viewPos = tracksViewport.getViewPosition();
+        int waveformScreenX = viewportBounds.getX() + waveformLocalX - viewPos.x;
+        
+        // Position the overlay only over the waveform column
+        playheadOverlay.setBounds(waveformScreenX, viewportBounds.getY(), 
+                                  waveformWidth, viewportBounds.getHeight());
+        
+        // The waveform bounds within the overlay are now at x=0
+        playheadOverlay.setWaveformBounds(juce::Rectangle<int>(
+            0, 0, waveformWidth, playheadOverlay.getHeight()));
+    }
+}
+
 void MainScreen::updatePlaybackPosition()
 {
     auto& engine = audioProcessor.getStemEngine();
     double pos = engine.getPositionNormalized();
     
+    // Update playhead overlay
+    playheadOverlay.setPlaybackPosition(pos);
+    updatePlayheadOverlay();
+    
+    // Still update individual track positions for waveform rendering (without playhead)
     for (auto& trackComp : trackComponents)
         trackComp->updatePlaybackPosition(pos);
     

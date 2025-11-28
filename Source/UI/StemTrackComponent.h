@@ -14,6 +14,10 @@ public:
     void updatePlaybackPosition(double normalizedPosition);
     void setVolume(float volume);
     void setShowSeparateChannels(bool separate);
+    void setDrawPlayhead(bool shouldDraw);
+    
+    // Get the waveform bounds relative to parent for overlay positioning
+    juce::Rectangle<int> getWaveformBounds() const;
     
     void paint(juce::Graphics& g) override;
     void resized() override;

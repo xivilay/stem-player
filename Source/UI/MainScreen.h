@@ -5,6 +5,28 @@
 
 class StemPlayerAudioProcessor;
 class StemPlayerAudioProcessorEditor;
+class MainScreen;
+
+// Overlay component that draws the playhead across all tracks
+class PlayheadOverlay : public juce::Component
+{
+public:
+    PlayheadOverlay(MainScreen& owner);
+    
+    void paint(juce::Graphics& g) override;
+    void mouseDown(const juce::MouseEvent& event) override;
+    void mouseDrag(const juce::MouseEvent& event) override;
+    
+    void setPlaybackPosition(double normalizedPosition);
+    void setWaveformBounds(juce::Rectangle<int> bounds);
+    
+    std::function<void(double)> onPositionChanged;
+
+private:
+    MainScreen& mainScreen;
+    double playbackPosition { 0.0 };
+    juce::Rectangle<int> waveformArea;
+};
 
 class MainScreen : public juce::Component,
                    public juce::KeyListener
@@ -27,6 +49,7 @@ public:
 private:
     void createTrackComponents();
     void updateTransportButtons();
+    void updatePlayheadOverlay();
     juce::String formatTime(double seconds);
     
     StemPlayerAudioProcessor& audioProcessor;
@@ -43,6 +66,7 @@ private:
     juce::Component tracksContainer;
     std::vector<std::unique_ptr<StemTrackComponent>> trackComponents;
     
+    PlayheadOverlay playheadOverlay;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainScreen)
 };
-

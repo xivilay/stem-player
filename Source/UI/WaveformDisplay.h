@@ -13,6 +13,7 @@ public:
     void setTrack(StemTrack* track);
     void setPlaybackPosition(double normalizedPosition);
     void setShowSeparateChannels(bool separate);
+    void setDrawPlayhead(bool shouldDraw) { drawPlayhead = shouldDraw; repaint(); }
     
     void paint(juce::Graphics& g) override;
     void resized() override;
@@ -29,6 +30,7 @@ private:
     StemTrack* currentTrack { nullptr };
     double playbackPosition { 0.0 };
     bool showSeparateChannels { false };
+    bool drawPlayhead { true };
     
     juce::Colour waveformColour { 0xff6ee7b7 };
     juce::Colour waveformColourRight { 0xff60a5fa };  // Blue for right channel

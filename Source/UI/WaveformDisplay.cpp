@@ -130,8 +130,8 @@ void WaveformDisplay::paint(juce::Graphics& g)
         g.drawText("No waveform", bounds, juce::Justification::centred);
     }
     
-    // Draw playhead
-    if (playbackPosition > 0.0 && playbackPosition <= 1.0)
+    // Draw playhead (only if enabled)
+    if (drawPlayhead && playbackPosition > 0.0 && playbackPosition <= 1.0)
     {
         float playheadX = bounds.getX() + 4.0f + 
                           (float)playbackPosition * (bounds.getWidth() - 8.0f);
