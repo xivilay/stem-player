@@ -3,20 +3,43 @@
 
 MidiLearnManager::MidiLearnManager()
 {
+    // Initialize all mappings
+    for (int i = 0; i < static_cast<int>(MidiControlType::NumControls); ++i)
+    {
+        mappings[i].controlType = static_cast<MidiControlType>(i);
+        mappings[i].ccNumber = -1;
+        mappings[i].channel = -1;
+    }
 }
 
-void MidiLearnManager::startLearning(int trackIndex)
+juce::String MidiLearnManager::getControlName(MidiControlType type)
+{
+    switch (type)
+    {
+        case MidiControlType::Stem1Volume: return "Stem 1 Volume";
+        case MidiControlType::Stem2Volume: return "Stem 2 Volume";
+        case MidiControlType::Stem3Volume: return "Stem 3 Volume";
+        case MidiControlType::Stem4Volume: return "Stem 4 Volume";
+        case MidiControlType::Stem5Volume: return "Stem 5 Volume";
+        case MidiControlType::PlayPause:   return "Play/Pause";
+        case MidiControlType::Stop:        return "Stop";
+        case MidiControlType::Rewind:      return "Rewind";
+        case MidiControlType::FastForward: return "Fast Forward";
+        default: return "Unknown";
+    }
+}
+
+void MidiLearnManager::startLearning(MidiControlType controlType)
 {
     juce::ScopedLock sl(lock);
     learning = true;
-    learningTrackIndex = trackIndex;
+    learningControlType = controlType;
 }
 
 void MidiLearnManager::stopLearning()
 {
     juce::ScopedLock sl(lock);
     learning = false;
-    learningTrackIndex = -1;
 }
 
 void MidiLearnManager::processMidiMessages(const juce::MidiBuffer& midiMessages, StemEngine& engine)
@@ -34,20 +57,20 @@ void MidiLearnManager::processMidiMessages(const juce::MidiBuffer& midiMessages,
             float value = message.getControllerValue() / 127.0f;
             
             // If we're learning, capture this CC
-            if (learning && learningTrackIndex >= 0)
+            if (learning)
             {
-                setMapping(learningTrackIndex, cc, channel);
+                setMapping(learningControlType, cc, channel);
                 learning = false;
                 
                 if (onMappingChanged)
                 {
-                    juce::MessageManager::callAsync([this]() {
+                    MidiControlType capturedType = learningControlType;
+                    int capturedCC = cc;
+                    juce::MessageManager::callAsync([this, capturedType, capturedCC]() {
                         if (onMappingChanged)
-                            onMappingChanged();
+                            onMappingChanged(capturedType, capturedCC);
                     });
                 }
-                
-                learningTrackIndex = -1;
                 continue;
             }
             
@@ -57,53 +80,84 @@ void MidiLearnManager::processMidiMessages(const juce::MidiBuffer& midiMessages,
                 if (mapping.ccNumber == cc && 
                     (mapping.channel == -1 || mapping.channel == channel))
                 {
-                    engine.setTrackVolume(mapping.trackIndex, value);
+                    switch (mapping.controlType)
+                    {
+                        case MidiControlType::Stem1Volume:
+                            engine.setTrackVolume(0, value);
+                            break;
+                        case MidiControlType::Stem2Volume:
+                            engine.setTrackVolume(1, value);
+                            break;
+                        case MidiControlType::Stem3Volume:
+                            engine.setTrackVolume(2, value);
+                            break;
+                        case MidiControlType::Stem4Volume:
+                            engine.setTrackVolume(3, value);
+                            break;
+                        case MidiControlType::Stem5Volume:
+                            engine.setTrackVolume(4, value);
+                            break;
+                        case MidiControlType::PlayPause:
+                            if (value > 0.5f)
+                                engine.togglePlayPause();
+                            break;
+                        case MidiControlType::Stop:
+                            if (value > 0.5f)
+                                engine.stop();
+                            break;
+                        case MidiControlType::Rewind:
+                            if (value > 0.5f)
+                                engine.rewind();
+                            break;
+                        case MidiControlType::FastForward:
+                            if (value > 0.5f)
+                                engine.fastForward();
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
         }
     }
 }
 
-void MidiLearnManager::setMapping(int trackIndex, int ccNumber, int channel)
+void MidiLearnManager::setMapping(MidiControlType controlType, int ccNumber, int channel)
 {
-    // Remove existing mapping for this track
-    removeMapping(trackIndex);
-    
-    // Also remove any mapping using this CC (one CC per parameter)
-    mappings.erase(
-        std::remove_if(mappings.begin(), mappings.end(),
-                       [ccNumber, channel](const MidiMapping& m) {
-                           return m.ccNumber == ccNumber && 
-                                  (m.channel == channel || m.channel == -1 || channel == -1);
-                       }),
-        mappings.end());
-    
-    MidiMapping newMapping;
-    newMapping.trackIndex = trackIndex;
-    newMapping.ccNumber = ccNumber;
-    newMapping.channel = channel;
-    
-    mappings.push_back(newMapping);
-}
-
-void MidiLearnManager::removeMapping(int trackIndex)
-{
-    mappings.erase(
-        std::remove_if(mappings.begin(), mappings.end(),
-                       [trackIndex](const MidiMapping& m) {
-                           return m.trackIndex == trackIndex;
-                       }),
-        mappings.end());
-}
-
-MidiMapping* MidiLearnManager::getMapping(int trackIndex)
-{
-    for (auto& mapping : mappings)
+    int index = static_cast<int>(controlType);
+    if (index >= 0 && index < static_cast<int>(MidiControlType::NumControls))
     {
-        if (mapping.trackIndex == trackIndex)
-            return &mapping;
+        // Remove any other mapping using this CC (one CC per control)
+        for (auto& mapping : mappings)
+        {
+            if (mapping.ccNumber == ccNumber && mapping.controlType != controlType)
+            {
+                mapping.ccNumber = -1;
+                mapping.channel = -1;
+            }
+        }
+        
+        mappings[index].ccNumber = ccNumber;
+        mappings[index].channel = channel;
     }
-    return nullptr;
+}
+
+void MidiLearnManager::removeMapping(MidiControlType controlType)
+{
+    int index = static_cast<int>(controlType);
+    if (index >= 0 && index < static_cast<int>(MidiControlType::NumControls))
+    {
+        mappings[index].ccNumber = -1;
+        mappings[index].channel = -1;
+    }
+}
+
+int MidiLearnManager::getMappedCC(MidiControlType controlType) const
+{
+    int index = static_cast<int>(controlType);
+    if (index >= 0 && index < static_cast<int>(MidiControlType::NumControls))
+        return mappings[index].ccNumber;
+    return -1;
 }
 
 juce::ValueTree MidiLearnManager::getStateAsValueTree() const
@@ -112,11 +166,14 @@ juce::ValueTree MidiLearnManager::getStateAsValueTree() const
     
     for (const auto& mapping : mappings)
     {
-        juce::ValueTree mappingTree("Mapping");
-        mappingTree.setProperty("trackIndex", mapping.trackIndex, nullptr);
-        mappingTree.setProperty("ccNumber", mapping.ccNumber, nullptr);
-        mappingTree.setProperty("channel", mapping.channel, nullptr);
-        state.addChild(mappingTree, -1, nullptr);
+        if (mapping.ccNumber >= 0)
+        {
+            juce::ValueTree mappingTree("Mapping");
+            mappingTree.setProperty("controlType", static_cast<int>(mapping.controlType), nullptr);
+            mappingTree.setProperty("ccNumber", mapping.ccNumber, nullptr);
+            mappingTree.setProperty("channel", mapping.channel, nullptr);
+            state.addChild(mappingTree, -1, nullptr);
+        }
     }
     
     return state;
@@ -125,7 +182,13 @@ juce::ValueTree MidiLearnManager::getStateAsValueTree() const
 void MidiLearnManager::loadStateFromValueTree(const juce::ValueTree& state)
 {
     juce::ScopedLock sl(lock);
-    mappings.clear();
+    
+    // Reset all mappings
+    for (auto& mapping : mappings)
+    {
+        mapping.ccNumber = -1;
+        mapping.channel = -1;
+    }
     
     for (int i = 0; i < state.getNumChildren(); ++i)
     {
@@ -133,14 +196,15 @@ void MidiLearnManager::loadStateFromValueTree(const juce::ValueTree& state)
         
         if (mappingTree.hasType("Mapping"))
         {
-            MidiMapping mapping;
-            mapping.trackIndex = mappingTree.getProperty("trackIndex", -1);
-            mapping.ccNumber = mappingTree.getProperty("ccNumber", -1);
-            mapping.channel = mappingTree.getProperty("channel", -1);
+            int controlTypeInt = mappingTree.getProperty("controlType", -1);
+            int ccNumber = mappingTree.getProperty("ccNumber", -1);
+            int channel = mappingTree.getProperty("channel", -1);
             
-            if (mapping.trackIndex >= 0 && mapping.ccNumber >= 0)
-                mappings.push_back(mapping);
+            if (controlTypeInt >= 0 && controlTypeInt < static_cast<int>(MidiControlType::NumControls) && ccNumber >= 0)
+            {
+                mappings[controlTypeInt].ccNumber = ccNumber;
+                mappings[controlTypeInt].channel = channel;
+            }
         }
     }
 }
-

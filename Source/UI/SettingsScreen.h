@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "../Core/StemDetector.h"
+#include "../Core/MidiLearnManager.h"
 
 class StemPlayerAudioProcessor;
 class StemPlayerAudioProcessorEditor;
@@ -30,6 +31,36 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PatternListModel)
 };
 
+// Individual MIDI assignment row
+class MidiAssignmentRow : public juce::Component,
+                           public juce::TextEditor::Listener
+{
+public:
+    MidiAssignmentRow(MidiControlType controlType, MidiLearnManager& manager);
+    ~MidiAssignmentRow() override;
+    
+    void paint(juce::Graphics& g) override;
+    void resized() override;
+    
+    void updateFromManager();
+    void textEditorTextChanged(juce::TextEditor& editor) override;
+    void textEditorReturnKeyPressed(juce::TextEditor& editor) override;
+    void textEditorFocusLost(juce::TextEditor& editor) override;
+
+private:
+    void applyTextValue();
+    
+    MidiControlType controlType;
+    MidiLearnManager& midiManager;
+    
+    juce::Label nameLabel;
+    juce::TextEditor ccEditor;
+    juce::TextButton learnButton;
+    juce::TextButton clearButton;
+    
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiAssignmentRow)
+};
+
 class SettingsScreen : public juce::Component
 {
 public:
@@ -39,6 +70,7 @@ public:
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+    void visibilityChanged() override;
 
 private:
     void browseForDefaultFolder();
@@ -46,6 +78,7 @@ private:
     void removeSelectedPattern();
     void resetPatternsToDefault();
     void saveSettings();
+    void updateMidiRows();
     
     StemPlayerAudioProcessor& audioProcessor;
     StemPlayerAudioProcessorEditor& editor;
@@ -58,6 +91,12 @@ private:
     juce::Label defaultFolderLabel;
     juce::TextButton browseFolderButton;
     juce::TextButton clearFolderButton;
+    
+    // MIDI assignment section
+    juce::Label midiSectionLabel;
+    juce::Viewport midiViewport;
+    juce::Component midiContainer;
+    std::vector<std::unique_ptr<MidiAssignmentRow>> midiRows;
     
     // Patterns section
     juce::Label patternsSectionLabel;
@@ -72,4 +111,3 @@ private:
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SettingsScreen)
 };
-

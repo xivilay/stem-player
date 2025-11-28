@@ -55,17 +55,10 @@ MainScreen::MainScreen(StemPlayerAudioProcessor& processor,
     tracksViewport.setViewedComponent(&tracksContainer, false);
     tracksViewport.setScrollBarsShown(true, false);
     addAndMakeVisible(tracksViewport);
-    
-    // Set up MIDI learn callback
-    audioProcessor.getMidiLearnManager().onMappingChanged = [this]() {
-        for (auto& trackComp : trackComponents)
-            trackComp->updateMidiMappingDisplay();
-    };
 }
 
 MainScreen::~MainScreen()
 {
-    audioProcessor.getMidiLearnManager().onMappingChanged = nullptr;
 }
 
 void MainScreen::paint(juce::Graphics& g)
@@ -146,8 +139,7 @@ void MainScreen::createTrackComponents()
     
     for (int i = 0; i < numTracks; ++i)
     {
-        auto trackComp = std::make_unique<StemTrackComponent>(i, 
-                            audioProcessor.getMidiLearnManager());
+        auto trackComp = std::make_unique<StemTrackComponent>(i);
         
         trackComp->setTrack(engine.getTrack(i));
         
@@ -178,6 +170,13 @@ void MainScreen::updatePlaybackPosition()
     timeLabel.setText(formatTime(currentTime) + " / " + formatTime(totalTime), 
                       juce::dontSendNotification);
     
+    // Update stem volumes from MIDI (in case they changed via MIDI)
+    for (size_t i = 0; i < trackComponents.size(); ++i)
+    {
+        if (auto* track = engine.getTrack(static_cast<int>(i)))
+            trackComponents[i]->setVolume(track->getVolume());
+    }
+    
     updateTransportButtons();
 }
 
@@ -193,4 +192,3 @@ juce::String MainScreen::formatTime(double seconds)
     int secs = static_cast<int>(seconds) % 60;
     return juce::String(mins) + ":" + juce::String(secs).paddedLeft('0', 2);
 }
-

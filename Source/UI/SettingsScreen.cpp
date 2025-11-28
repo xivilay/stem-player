@@ -91,6 +91,129 @@ juce::Component* PatternListModel::refreshComponentForCell(int rowNumber, int co
     return cell;
 }
 
+// MidiAssignmentRow implementation
+MidiAssignmentRow::MidiAssignmentRow(MidiControlType type, MidiLearnManager& manager)
+    : controlType(type), midiManager(manager)
+{
+    nameLabel.setText(MidiLearnManager::getControlName(type), juce::dontSendNotification);
+    nameLabel.setFont(juce::Font(14.0f));
+    nameLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textPrimary);
+    nameLabel.setJustificationType(juce::Justification::centredLeft);
+    addAndMakeVisible(nameLabel);
+    
+    ccEditor.setFont(juce::Font(14.0f));
+    ccEditor.setJustification(juce::Justification::centred);
+    ccEditor.setInputRestrictions(3, "0123456789");
+    ccEditor.setColour(juce::TextEditor::backgroundColourId, StemPlayerLookAndFeel::backgroundLight);
+    ccEditor.setColour(juce::TextEditor::textColourId, StemPlayerLookAndFeel::textPrimary);
+    ccEditor.setColour(juce::TextEditor::outlineColourId, StemPlayerLookAndFeel::backgroundLight);
+    ccEditor.addListener(this);
+    addAndMakeVisible(ccEditor);
+    
+    learnButton.setButtonText("Learn");
+    learnButton.onClick = [this]() {
+        if (midiManager.isLearning() && midiManager.getLearningControlType() == controlType)
+        {
+            midiManager.stopLearning();
+            learnButton.setButtonText("Learn");
+        }
+        else
+        {
+            midiManager.startLearning(controlType);
+            learnButton.setButtonText("...");
+        }
+    };
+    addAndMakeVisible(learnButton);
+    
+    clearButton.setButtonText("Clear");
+    clearButton.onClick = [this]() {
+        midiManager.removeMapping(controlType);
+        ccEditor.setText("", juce::dontSendNotification);
+    };
+    addAndMakeVisible(clearButton);
+    
+    updateFromManager();
+}
+
+MidiAssignmentRow::~MidiAssignmentRow()
+{
+    ccEditor.removeListener(this);
+}
+
+void MidiAssignmentRow::paint(juce::Graphics& g)
+{
+    g.setColour(StemPlayerLookAndFeel::backgroundMedium);
+    g.fillRoundedRectangle(getLocalBounds().toFloat(), 4.0f);
+}
+
+void MidiAssignmentRow::resized()
+{
+    auto bounds = getLocalBounds().reduced(8, 4);
+    
+    nameLabel.setBounds(bounds.removeFromLeft(140));
+    bounds.removeFromLeft(10);
+    
+    clearButton.setBounds(bounds.removeFromRight(60));
+    bounds.removeFromRight(6);
+    learnButton.setBounds(bounds.removeFromRight(60));
+    bounds.removeFromRight(10);
+    
+    ccEditor.setBounds(bounds.removeFromRight(60));
+}
+
+void MidiAssignmentRow::updateFromManager()
+{
+    int cc = midiManager.getMappedCC(controlType);
+    
+    if (cc >= 0)
+        ccEditor.setText(juce::String(cc), juce::dontSendNotification);
+    else
+        ccEditor.setText("", juce::dontSendNotification);
+    
+    if (midiManager.isLearning() && midiManager.getLearningControlType() == controlType)
+        learnButton.setButtonText("...");
+    else
+        learnButton.setButtonText("Learn");
+}
+
+void MidiAssignmentRow::textEditorTextChanged(juce::TextEditor& /*editor*/)
+{
+    // Don't apply while typing
+}
+
+void MidiAssignmentRow::textEditorReturnKeyPressed(juce::TextEditor& /*editor*/)
+{
+    applyTextValue();
+}
+
+void MidiAssignmentRow::textEditorFocusLost(juce::TextEditor& /*editor*/)
+{
+    applyTextValue();
+}
+
+void MidiAssignmentRow::applyTextValue()
+{
+    juce::String text = ccEditor.getText().trim();
+    
+    if (text.isEmpty())
+    {
+        midiManager.removeMapping(controlType);
+    }
+    else
+    {
+        int cc = text.getIntValue();
+        if (cc >= 0 && cc <= 127)
+        {
+            midiManager.setMapping(controlType, cc);
+        }
+        else
+        {
+            // Invalid value - reset display
+            updateFromManager();
+        }
+    }
+}
+
 // SettingsScreen implementation
 SettingsScreen::SettingsScreen(StemPlayerAudioProcessor& processor, 
                                 StemPlayerAudioProcessorEditor& ed)
@@ -139,6 +262,31 @@ SettingsScreen::SettingsScreen(StemPlayerAudioProcessor& processor,
     };
     addAndMakeVisible(clearFolderButton);
     
+    // MIDI assignment section
+    midiSectionLabel.setText("MIDI Control Assignments", juce::dontSendNotification);
+    midiSectionLabel.setFont(juce::Font(16.0f, juce::Font::bold));
+    midiSectionLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textPrimary);
+    addAndMakeVisible(midiSectionLabel);
+    
+    // Create MIDI assignment rows
+    for (int i = 0; i < MidiLearnManager::getNumControls(); ++i)
+    {
+        auto controlType = static_cast<MidiControlType>(i);
+        auto row = std::make_unique<MidiAssignmentRow>(controlType, audioProcessor.getMidiLearnManager());
+        midiContainer.addAndMakeVisible(row.get());
+        midiRows.push_back(std::move(row));
+    }
+    
+    midiViewport.setViewedComponent(&midiContainer, false);
+    midiViewport.setScrollBarsShown(true, false);
+    addAndMakeVisible(midiViewport);
+    
+    // Set up callback for MIDI learn updates
+    audioProcessor.getMidiLearnManager().onMappingChanged = [this](MidiControlType type, int cc) {
+        juce::ignoreUnused(type, cc);
+        updateMidiRows();
+    };
+    
     // Patterns section
     patternsSectionLabel.setText("Stem Detection Patterns", juce::dontSendNotification);
     patternsSectionLabel.setFont(juce::Font(16.0f, juce::Font::bold));
@@ -174,6 +322,7 @@ SettingsScreen::SettingsScreen(StemPlayerAudioProcessor& processor,
 
 SettingsScreen::~SettingsScreen()
 {
+    audioProcessor.getMidiLearnManager().onMappingChanged = nullptr;
 }
 
 void SettingsScreen::paint(juce::Graphics& g)
@@ -191,7 +340,7 @@ void SettingsScreen::resized()
     header.removeFromLeft(20);
     titleLabel.setBounds(header);
     
-    bounds.removeFromTop(30);
+    bounds.removeFromTop(20);
     
     // Default folder section
     folderSectionLabel.setBounds(bounds.removeFromTop(24));
@@ -204,13 +353,33 @@ void SettingsScreen::resized()
     folderRow.removeFromRight(10);
     defaultFolderLabel.setBounds(folderRow);
     
-    bounds.removeFromTop(30);
+    bounds.removeFromTop(20);
+    
+    // MIDI section
+    midiSectionLabel.setBounds(bounds.removeFromTop(24));
+    bounds.removeFromTop(8);
+    
+    int midiRowHeight = 36;
+    int midiTotalHeight = static_cast<int>(midiRows.size()) * (midiRowHeight + 4);
+    int midiViewportHeight = juce::jmin(200, midiTotalHeight + 10);
+    
+    midiViewport.setBounds(bounds.removeFromTop(midiViewportHeight));
+    midiContainer.setSize(midiViewport.getWidth() - 20, midiTotalHeight);
+    
+    int y = 0;
+    for (auto& row : midiRows)
+    {
+        row->setBounds(0, y, midiContainer.getWidth(), midiRowHeight);
+        y += midiRowHeight + 4;
+    }
+    
+    bounds.removeFromTop(20);
     
     // Patterns section
     patternsSectionLabel.setBounds(bounds.removeFromTop(24));
     bounds.removeFromTop(8);
     
-    // Pattern buttons
+    // Pattern buttons at bottom
     auto buttonRow = bounds.removeFromBottom(40);
     addPatternButton.setBounds(buttonRow.removeFromLeft(70));
     buttonRow.removeFromLeft(10);
@@ -220,8 +389,20 @@ void SettingsScreen::resized()
     
     bounds.removeFromBottom(10);
     
-    // Table
+    // Table takes remaining space
     patternsTable.setBounds(bounds);
+}
+
+void SettingsScreen::visibilityChanged()
+{
+    if (isVisible())
+        updateMidiRows();
+}
+
+void SettingsScreen::updateMidiRows()
+{
+    for (auto& row : midiRows)
+        row->updateFromManager();
 }
 
 void SettingsScreen::browseForDefaultFolder()
@@ -278,4 +459,3 @@ void SettingsScreen::saveSettings()
 {
     audioProcessor.getAppSettings().setStemPatterns(editingPatterns);
 }
-

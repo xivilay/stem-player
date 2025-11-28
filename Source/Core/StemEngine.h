@@ -20,8 +20,12 @@ public:
     void pause();
     void stop();
     void togglePlayPause();
+    void rewind();
+    void fastForward();
     
     bool isPlaying() const { return playing; }
+    
+    void setSeekAmount(double seconds) { seekAmountSeconds = seconds; }
     
     void setPosition(double positionInSeconds);
     void setPositionNormalized(double normalizedPosition);
@@ -51,6 +55,7 @@ private:
     
     double currentSampleRate { 44100.0 };
     int currentBlockSize { 512 };
+    double seekAmountSeconds { 5.0 };
     
     juce::CriticalSection processLock;
     

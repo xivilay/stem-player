@@ -168,6 +168,19 @@ void StemEngine::togglePlayPause()
         play();
 }
 
+void StemEngine::rewind()
+{
+    double currentPos = getPositionInSeconds();
+    setPosition(juce::jmax(0.0, currentPos - seekAmountSeconds));
+}
+
+void StemEngine::fastForward()
+{
+    double currentPos = getPositionInSeconds();
+    double totalLength = getTotalLengthInSeconds();
+    setPosition(juce::jmin(totalLength, currentPos + seekAmountSeconds));
+}
+
 void StemEngine::setPosition(double positionInSeconds)
 {
     if (currentSampleRate > 0)

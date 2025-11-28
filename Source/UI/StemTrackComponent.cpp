@@ -1,8 +1,8 @@
 #include "StemTrackComponent.h"
 #include "LookAndFeel.h"
 
-StemTrackComponent::StemTrackComponent(int index, MidiLearnManager& midiManager)
-    : trackIndex(index), midiLearnManager(midiManager)
+StemTrackComponent::StemTrackComponent(int index)
+    : trackIndex(index)
 {
     // Stem name label
     stemNameLabel.setFont(juce::Font(16.0f, juce::Font::bold));
@@ -28,22 +28,12 @@ StemTrackComponent::StemTrackComponent(int index, MidiLearnManager& midiManager)
     };
     addAndMakeVisible(volumeSlider);
     
-    // Right-click for MIDI learn
-    volumeSlider.setMouseClickGrabsKeyboardFocus(false);
-    volumeSlider.addMouseListener(this, false);
-    
     // Volume percentage label
     volumeLabel.setFont(juce::Font(12.0f));
     volumeLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textSecondary);
     volumeLabel.setJustificationType(juce::Justification::centred);
     volumeLabel.setText("100%", juce::dontSendNotification);
     addAndMakeVisible(volumeLabel);
-    
-    // MIDI mapping label
-    midiMappingLabel.setFont(juce::Font(10.0f));
-    midiMappingLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::accentSecondary);
-    midiMappingLabel.setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(midiMappingLabel);
     
     // Waveform display
     waveformDisplay.onPositionChanged = [this](double pos) {
@@ -73,7 +63,6 @@ void StemTrackComponent::setTrack(StemTrack* track)
         waveformDisplay.setTrack(nullptr);
     }
     
-    updateMidiMappingDisplay();
     repaint();
 }
 
@@ -82,24 +71,9 @@ void StemTrackComponent::updatePlaybackPosition(double normalizedPosition)
     waveformDisplay.setPlaybackPosition(normalizedPosition);
 }
 
-void StemTrackComponent::updateMidiMappingDisplay()
+void StemTrackComponent::setVolume(float volume)
 {
-    auto* mapping = midiLearnManager.getMapping(trackIndex);
-    
-    if (mapping != nullptr && mapping->ccNumber >= 0)
-    {
-        midiMappingLabel.setText("CC " + juce::String(mapping->ccNumber), 
-                                 juce::dontSendNotification);
-    }
-    else if (midiLearnManager.isLearning() && 
-             midiLearnManager.getLearningTrackIndex() == trackIndex)
-    {
-        midiMappingLabel.setText("Learning...", juce::dontSendNotification);
-    }
-    else
-    {
-        midiMappingLabel.setText("", juce::dontSendNotification);
-    }
+    volumeSlider.setValue(volume, juce::sendNotificationSync);
 }
 
 void StemTrackComponent::paint(juce::Graphics& g)
@@ -132,9 +106,8 @@ void StemTrackComponent::resized()
     stemNameLabel.setBounds(leftArea.removeFromTop(24));
     
     auto sliderArea = leftArea.reduced(20, 4);
-    volumeSlider.setBounds(sliderArea.removeFromTop(sliderArea.getHeight() - 36));
-    volumeLabel.setBounds(sliderArea.removeFromTop(18));
-    midiMappingLabel.setBounds(sliderArea);
+    volumeSlider.setBounds(sliderArea.removeFromTop(sliderArea.getHeight() - 18));
+    volumeLabel.setBounds(sliderArea);
     
     // Rest: waveform display
     bounds.removeFromLeft(8);
@@ -164,52 +137,3 @@ juce::Colour StemTrackComponent::getStemColor(const juce::String& stemType)
     
     return StemPlayerLookAndFeel::accentSecondary;
 }
-
-void StemTrackComponent::showVolumeContextMenu()
-{
-    juce::PopupMenu menu;
-    
-    auto* mapping = midiLearnManager.getMapping(trackIndex);
-    bool hasMapping = (mapping != nullptr && mapping->ccNumber >= 0);
-    
-    menu.addItem(1, "MIDI Learn", true, midiLearnManager.isLearning() && 
-                 midiLearnManager.getLearningTrackIndex() == trackIndex);
-    
-    if (hasMapping)
-        menu.addItem(2, "Reset MIDI Mapping");
-    
-    menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&volumeSlider),
-                       [this](int result) {
-        if (result == 1)
-        {
-            if (midiLearnManager.isLearning() && 
-                midiLearnManager.getLearningTrackIndex() == trackIndex)
-            {
-                midiLearnManager.stopLearning();
-            }
-            else
-            {
-                midiLearnManager.startLearning(trackIndex);
-            }
-            updateMidiMappingDisplay();
-        }
-        else if (result == 2)
-        {
-            midiLearnManager.removeMapping(trackIndex);
-            updateMidiMappingDisplay();
-        }
-    });
-}
-
-// Override mouseDown to handle right-click on slider
-void StemTrackComponent::mouseDown(const juce::MouseEvent& event)
-{
-    if (event.mods.isRightButtonDown())
-    {
-        if (volumeSlider.getBounds().contains(event.getPosition()))
-        {
-            showVolumeContextMenu();
-        }
-    }
-}
-
