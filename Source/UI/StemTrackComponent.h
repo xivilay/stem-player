@@ -13,6 +13,7 @@ public:
     void setTrack(StemTrack* track);
     void updatePlaybackPosition(double normalizedPosition);
     void setVolume(float volume);
+    void setShowSeparateChannels(bool separate);
     
     void paint(juce::Graphics& g) override;
     void resized() override;

@@ -22,6 +22,7 @@ public:
     
     void songLoaded(const juce::String& songName);
     void updatePlaybackPosition();
+    void updateWaveformDisplayMode();
 
 private:
     void createTrackComponents();

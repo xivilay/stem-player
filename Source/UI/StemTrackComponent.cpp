@@ -76,6 +76,11 @@ void StemTrackComponent::setVolume(float volume)
     volumeSlider.setValue(volume, juce::sendNotificationSync);
 }
 
+void StemTrackComponent::setShowSeparateChannels(bool separate)
+{
+    waveformDisplay.setShowSeparateChannels(separate);
+}
+
 void StemTrackComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();

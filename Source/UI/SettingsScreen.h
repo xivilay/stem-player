@@ -92,6 +92,10 @@ private:
     juce::TextButton browseFolderButton;
     juce::TextButton clearFolderButton;
     
+    // Display section
+    juce::Label displaySectionLabel;
+    juce::ToggleButton separateChannelsToggle;
+    
     // MIDI assignment section
     juce::Label midiSectionLabel;
     juce::Viewport midiViewport;

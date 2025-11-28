@@ -179,6 +179,7 @@ void MainScreen::songLoaded(const juce::String& songName)
 {
     songNameLabel.setText(songName, juce::dontSendNotification);
     createTrackComponents();
+    updateWaveformDisplayMode();
     updateTransportButtons();
     resized();
 }
@@ -244,4 +245,12 @@ juce::String MainScreen::formatTime(double seconds)
     int mins = static_cast<int>(seconds) / 60;
     int secs = static_cast<int>(seconds) % 60;
     return juce::String(mins) + ":" + juce::String(secs).paddedLeft('0', 2);
+}
+
+void MainScreen::updateWaveformDisplayMode()
+{
+    bool separateChannels = audioProcessor.getAppSettings().getShowSeparateChannels();
+    
+    for (auto& trackComp : trackComponents)
+        trackComp->setShowSeparateChannels(separateChannels);
 }

@@ -262,6 +262,22 @@ SettingsScreen::SettingsScreen(StemPlayerAudioProcessor& processor,
     };
     addAndMakeVisible(clearFolderButton);
     
+    // Display section
+    displaySectionLabel.setText("Display", juce::dontSendNotification);
+    displaySectionLabel.setFont(juce::Font(16.0f, juce::Font::bold));
+    displaySectionLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textPrimary);
+    addAndMakeVisible(displaySectionLabel);
+    
+    separateChannelsToggle.setButtonText("Show separate channels on waveform (L/R)");
+    separateChannelsToggle.setColour(juce::ToggleButton::textColourId, StemPlayerLookAndFeel::textPrimary);
+    separateChannelsToggle.setColour(juce::ToggleButton::tickColourId, StemPlayerLookAndFeel::accentPrimary);
+    separateChannelsToggle.setToggleState(audioProcessor.getAppSettings().getShowSeparateChannels(), 
+                                          juce::dontSendNotification);
+    separateChannelsToggle.onClick = [this]() {
+        audioProcessor.getAppSettings().setShowSeparateChannels(separateChannelsToggle.getToggleState());
+    };
+    addAndMakeVisible(separateChannelsToggle);
+    
     // MIDI assignment section
     midiSectionLabel.setText("MIDI Control Assignments", juce::dontSendNotification);
     midiSectionLabel.setFont(juce::Font(16.0f, juce::Font::bold));
@@ -352,6 +368,13 @@ void SettingsScreen::resized()
     browseFolderButton.setBounds(folderRow.removeFromRight(90));
     folderRow.removeFromRight(10);
     defaultFolderLabel.setBounds(folderRow);
+    
+    bounds.removeFromTop(20);
+    
+    // Display section
+    displaySectionLabel.setBounds(bounds.removeFromTop(24));
+    bounds.removeFromTop(8);
+    separateChannelsToggle.setBounds(bounds.removeFromTop(28));
     
     bounds.removeFromTop(20);
     

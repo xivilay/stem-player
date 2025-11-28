@@ -19,11 +19,15 @@ public:
     const juce::Array<StemPattern>& getStemPatterns() const { return stemPatterns; }
     void setStemPatterns(const juce::Array<StemPattern>& patterns);
     
+    bool getShowSeparateChannels() const { return showSeparateChannels; }
+    void setShowSeparateChannels(bool separate);
+    
     static juce::File getSettingsFile();
 
 private:
     juce::String defaultFolder;
     juce::Array<StemPattern> stemPatterns;
+    bool showSeparateChannels { false };  // false = mixed, true = separate channels
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AppSettings)
 };

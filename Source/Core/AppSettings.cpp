@@ -31,6 +31,7 @@ void AppSettings::loadSettings()
     if (xml->hasTagName("StemPlayerSettings"))
     {
         defaultFolder = xml->getStringAttribute("defaultFolder", "");
+        showSeparateChannels = xml->getBoolAttribute("showSeparateChannels", false);
         
         auto patternsElement = xml->getChildByName("StemPatterns");
         if (patternsElement != nullptr)
@@ -58,6 +59,7 @@ void AppSettings::saveSettings()
     auto xml = std::make_unique<juce::XmlElement>("StemPlayerSettings");
     
     xml->setAttribute("defaultFolder", defaultFolder);
+    xml->setAttribute("showSeparateChannels", showSeparateChannels);
     
     auto* patternsElement = xml->createNewChildElement("StemPatterns");
     
@@ -81,6 +83,12 @@ void AppSettings::setDefaultFolder(const juce::String& folder)
 void AppSettings::setStemPatterns(const juce::Array<StemPattern>& patterns)
 {
     stemPatterns = patterns;
+    saveSettings();
+}
+
+void AppSettings::setShowSeparateChannels(bool separate)
+{
+    showSeparateChannels = separate;
     saveSettings();
 }
 

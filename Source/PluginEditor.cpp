@@ -59,6 +59,9 @@ void StemPlayerAudioProcessorEditor::showScreen(StemPlayerAudioProcessor::Screen
     
     if (screen == StemPlayerAudioProcessor::Screen::Selection)
         selectionScreen->refresh();
+    
+    if (screen == StemPlayerAudioProcessor::Screen::Main)
+        mainScreen->updateWaveformDisplayMode();
 }
 
 void StemPlayerAudioProcessorEditor::onSongSelected(const juce::String& songName, 
