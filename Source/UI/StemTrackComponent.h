@@ -5,6 +5,30 @@
 #include "../Core/StemDetector.h"
 #include "WaveformDisplay.h"
 
+// Custom slider that supports click-to-mute
+class MuteableSlider : public juce::Slider
+{
+public:
+    MuteableSlider();
+    
+    void mouseDown(const juce::MouseEvent& event) override;
+    void mouseUp(const juce::MouseEvent& event) override;
+    void mouseDrag(const juce::MouseEvent& event) override;
+    
+    bool isMuted() const { return muted; }
+    void setMuted(bool shouldMute);
+    
+    std::function<void(bool)> onMuteChanged;
+
+private:
+    bool muted { false };
+    double volumeBeforeMute { 1.0 };
+    bool isDragging { false };
+    juce::Point<int> mouseDownPosition;
+    
+    static constexpr int clickThreshold = 4;  // pixels
+};
+
 class StemTrackComponent : public juce::Component
 {
 public:
@@ -33,7 +57,7 @@ private:
     bool trackLoaded { false };
     
     juce::Label stemNameLabel;
-    juce::Slider volumeSlider;
+    MuteableSlider volumeSlider;
     WaveformDisplay waveformDisplay;
     
     // Colors for different stem types

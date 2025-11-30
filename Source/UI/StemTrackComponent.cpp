@@ -1,6 +1,62 @@
 #include "StemTrackComponent.h"
 #include "LookAndFeel.h"
 
+// MuteableSlider implementation
+MuteableSlider::MuteableSlider()
+{
+}
+
+void MuteableSlider::mouseDown(const juce::MouseEvent& event)
+{
+    mouseDownPosition = event.getPosition();
+    isDragging = false;
+    juce::Slider::mouseDown(event);
+}
+
+void MuteableSlider::mouseDrag(const juce::MouseEvent& event)
+{
+    // Check if mouse moved enough to be considered a drag
+    int distance = mouseDownPosition.getDistanceFrom(event.getPosition());
+    if (distance > clickThreshold)
+        isDragging = true;
+    
+    juce::Slider::mouseDrag(event);
+}
+
+void MuteableSlider::mouseUp(const juce::MouseEvent& event)
+{
+    // If it was a short click (not a drag), toggle mute
+    if (!isDragging)
+    {
+        setMuted(!muted);
+        
+        if (onMuteChanged)
+            onMuteChanged(muted);
+    }
+    
+    juce::Slider::mouseUp(event);
+}
+
+void MuteableSlider::setMuted(bool shouldMute)
+{
+    if (shouldMute && !muted)
+    {
+        // Muting - save current volume and set to 0
+        volumeBeforeMute = getValue();
+        if (volumeBeforeMute < 0.01)
+            volumeBeforeMute = 1.0;  // If already at 0, restore to full
+        muted = true;
+        setValue(0.0, juce::sendNotification);
+    }
+    else if (!shouldMute && muted)
+    {
+        // Unmuting - restore previous volume
+        muted = false;
+        setValue(volumeBeforeMute, juce::sendNotification);
+    }
+}
+
+// StemTrackComponent implementation
 StemTrackComponent::StemTrackComponent(int index)
     : trackIndex(index)
 {
@@ -27,6 +83,12 @@ StemTrackComponent::StemTrackComponent(int index)
                 onVolumeChanged(trackIndex, static_cast<float>(volumeSlider.getValue()));
         }
     };
+    
+    volumeSlider.onMuteChanged = [this](bool muted) {
+        // Visual feedback could be added here if needed
+        juce::ignoreUnused(muted);
+    };
+    
     addAndMakeVisible(volumeSlider);
     
     // Waveform display
