@@ -2,7 +2,7 @@
 
 AppSettings::AppSettings()
 {
-    stemPatterns = StemDetector::getDefaultPatterns();
+    stemRegexPatterns = StemDetector::getDefaultPatterns();
 }
 
 juce::File AppSettings::getSettingsFile()
@@ -41,23 +41,15 @@ void AppSettings::loadSettings()
         if (ww > 0 && wh > 0)
             windowBounds = juce::Rectangle<int>(wx, wy, ww, wh);
         
+        // Load stem regex patterns
         auto patternsElement = xml->getChildByName("StemPatterns");
         if (patternsElement != nullptr)
         {
-            stemPatterns.clear();
-            
-            for (auto* patternElement : patternsElement->getChildIterator())
-            {
-                if (patternElement->hasTagName("Pattern"))
-                {
-                    StemPattern pattern;
-                    pattern.stemType = patternElement->getStringAttribute("type", "");
-                    pattern.pattern = patternElement->getStringAttribute("pattern", "");
-                    
-                    if (pattern.stemType.isNotEmpty() && pattern.pattern.isNotEmpty())
-                        stemPatterns.add(pattern);
-                }
-            }
+            auto defaults = StemDetector::getDefaultPatterns();
+            stemRegexPatterns[0] = patternsElement->getStringAttribute("vocals", defaults[0]);
+            stemRegexPatterns[1] = patternsElement->getStringAttribute("drums", defaults[1]);
+            stemRegexPatterns[2] = patternsElement->getStringAttribute("bass", defaults[2]);
+            stemRegexPatterns[3] = patternsElement->getStringAttribute("other", defaults[3]);
         }
     }
 }
@@ -78,14 +70,12 @@ void AppSettings::saveSettings()
         xml->setAttribute("windowHeight", windowBounds.getHeight());
     }
     
+    // Save stem regex patterns
     auto* patternsElement = xml->createNewChildElement("StemPatterns");
-    
-    for (const auto& pattern : stemPatterns)
-    {
-        auto* patternElement = patternsElement->createNewChildElement("Pattern");
-        patternElement->setAttribute("type", pattern.stemType);
-        patternElement->setAttribute("pattern", pattern.pattern);
-    }
+    patternsElement->setAttribute("vocals", stemRegexPatterns[0]);
+    patternsElement->setAttribute("drums", stemRegexPatterns[1]);
+    patternsElement->setAttribute("bass", stemRegexPatterns[2]);
+    patternsElement->setAttribute("other", stemRegexPatterns[3]);
     
     auto file = getSettingsFile();
     xml->writeTo(file);
@@ -97,9 +87,15 @@ void AppSettings::setDefaultFolder(const juce::String& folder)
     saveSettings();
 }
 
-void AppSettings::setStemPatterns(const juce::Array<StemPattern>& patterns)
+void AppSettings::setStemRegexPatterns(const std::array<juce::String, 4>& patterns)
 {
-    stemPatterns = patterns;
+    stemRegexPatterns = patterns;
+    saveSettings();
+}
+
+void AppSettings::resetStemRegexToDefaults()
+{
+    stemRegexPatterns = StemDetector::getDefaultPatterns();
     saveSettings();
 }
 
@@ -114,4 +110,3 @@ void AppSettings::setWindowBounds(juce::Rectangle<int> bounds)
     windowBounds = bounds;
     saveSettings();
 }
-

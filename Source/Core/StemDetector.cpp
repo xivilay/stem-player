@@ -1,8 +1,9 @@
 #include "StemDetector.h"
+#include <regex>
 
 StemDetector::StemDetector()
 {
-    stemPatterns = getDefaultPatterns();
+    regexPatterns = getDefaultPatterns();
     
     audioExtensions.add(".mp3");
     audioExtensions.add(".wav");
@@ -12,54 +13,42 @@ StemDetector::StemDetector()
     audioExtensions.add(".m4a");
 }
 
-void StemDetector::setPatterns(const juce::Array<StemPattern>& patterns)
+std::array<juce::String, 4> StemDetector::getDefaultPatterns()
 {
-    stemPatterns = patterns;
+    return {
+        // Vocals: matches _vocal, _vocals, (Vocal), (Vocals), -vocal, -vocals (case insensitive)
+        R"([\s_\-\(](vocals?)\)?)",
+        // Drums: matches _drum, _drums, (Drum), (Drums), -drum, -drums
+        R"([\s_\-\(](drums?)\)?)",
+        // Bass: matches _bass, (Bass), -bass
+        R"([\s_\-\(](bass)\)?)",
+        // Other: matches _other, (Other), -other, _inst, _instrumental
+        R"([\s_\-\(](other|inst(rumental)?)\)?)"
+    };
 }
 
-juce::Array<StemPattern> StemDetector::getDefaultPatterns()
+juce::String StemDetector::getStemTypeName(StemType type)
 {
-    juce::Array<StemPattern> defaults;
-    
-    // Underscore patterns (most common)
-    defaults.add({ "Vocals", "_vocals" });
-    defaults.add({ "Vocals", "_vocal" });
-    defaults.add({ "Drums", "_drums" });
-    defaults.add({ "Drums", "_drum" });
-    defaults.add({ "Bass", "_bass" });
-    defaults.add({ "Other", "_other" });
-    defaults.add({ "Piano", "_piano" });
-    defaults.add({ "Guitar", "_guitar" });
-    defaults.add({ "Synth", "_synth" });
-    defaults.add({ "Strings", "_strings" });
-    
-    // Underscore + parentheses patterns
-    defaults.add({ "Vocals", "_(Vocals)" });
-    defaults.add({ "Vocals", "_(Vocal)" });
-    defaults.add({ "Drums", "_(Drums)" });
-    defaults.add({ "Drums", "_(Drum)" });
-    defaults.add({ "Bass", "_(Bass)" });
-    defaults.add({ "Other", "_(Other)" });
-    defaults.add({ "Piano", "_(Piano)" });
-    defaults.add({ "Guitar", "_(Guitar)" });
-    
-    // Space + parentheses patterns
-    defaults.add({ "Vocals", " (Vocals)" });
-    defaults.add({ "Vocals", " (Vocal)" });
-    defaults.add({ "Drums", " (Drums)" });
-    defaults.add({ "Drums", " (Drum)" });
-    defaults.add({ "Bass", " (Bass)" });
-    defaults.add({ "Other", " (Other)" });
-    defaults.add({ "Piano", " (Piano)" });
-    defaults.add({ "Guitar", " (Guitar)" });
-    
-    // Hyphen patterns
-    defaults.add({ "Vocals", "-vocals" });
-    defaults.add({ "Drums", "-drums" });
-    defaults.add({ "Bass", "-bass" });
-    defaults.add({ "Other", "-other" });
-    
-    return defaults;
+    switch (type)
+    {
+        case StemType::Vocals: return "Vocals";
+        case StemType::Drums:  return "Drums";
+        case StemType::Bass:   return "Bass";
+        case StemType::Other:  return "Other";
+        default: return "Unknown";
+    }
+}
+
+juce::String StemDetector::getStemTypeName(int index)
+{
+    if (index >= 0 && index < 4)
+        return getStemTypeName(static_cast<StemType>(index));
+    return "Unknown";
+}
+
+void StemDetector::setPatterns(const std::array<juce::String, 4>& patterns)
+{
+    regexPatterns = patterns;
 }
 
 bool StemDetector::isAudioFile(const juce::File& file) const
@@ -68,20 +57,37 @@ bool StemDetector::isAudioFile(const juce::File& file) const
     return audioExtensions.contains(ext);
 }
 
-juce::String StemDetector::detectStemType(const juce::String& filename) const
+bool StemDetector::matchesPattern(const juce::String& filename, const juce::String& pattern) const
 {
-    juce::String lowerFilename = filename.toLowerCase();
+    if (pattern.isEmpty())
+        return false;
     
-    for (const auto& pattern : stemPatterns)
+    try
     {
-        if (lowerFilename.contains(pattern.pattern.toLowerCase()))
-            return pattern.stemType;
+        std::regex regex(pattern.toStdString(), std::regex_constants::icase);
+        return std::regex_search(filename.toStdString(), regex);
     }
-    
-    return "Unknown";
+    catch (const std::regex_error&)
+    {
+        // Invalid regex, try simple contains match as fallback
+        return filename.toLowerCase().contains(pattern.toLowerCase());
+    }
 }
 
-juce::String StemDetector::extractSongName(const juce::String& filename) const
+StemType StemDetector::detectStemType(const juce::String& filename) const
+{
+    // Check each stem type in order
+    for (int i = 0; i < 4; ++i)
+    {
+        if (matchesPattern(filename, regexPatterns[i]))
+            return static_cast<StemType>(i);
+    }
+    
+    // Default to Other if no match
+    return StemType::Other;
+}
+
+juce::String StemDetector::extractSongName(const juce::String& filename, StemType detectedType) const
 {
     juce::String name = filename;
     
@@ -90,23 +96,31 @@ juce::String StemDetector::extractSongName(const juce::String& filename) const
     if (lastDot > 0)
         name = name.substring(0, lastDot);
     
-    // Try to remove stem patterns to get the base song name
-    juce::String lowerName = name.toLowerCase();
+    // Try to remove the stem type pattern from the filename
+    const juce::String& pattern = regexPatterns[static_cast<int>(detectedType)];
     
-    for (const auto& pattern : stemPatterns)
+    if (pattern.isNotEmpty())
     {
-        juce::String lowerPattern = pattern.pattern.toLowerCase();
-        int patternPos = lowerName.indexOf(lowerPattern);
-        
-        if (patternPos >= 0)
+        try
         {
-            // Remove the pattern from the original (non-lowercased) string
-            name = name.substring(0, patternPos) + name.substring(patternPos + pattern.pattern.length());
-            break;
+            std::regex regex(pattern.toStdString(), std::regex_constants::icase);
+            std::string result = std::regex_replace(name.toStdString(), regex, "");
+            name = juce::String(result);
+        }
+        catch (const std::regex_error&)
+        {
+            // Fallback: try to remove common patterns
         }
     }
     
-    return name.trim();
+    // Clean up trailing/leading separators
+    name = name.trim();
+    while (name.endsWithChar('_') || name.endsWithChar('-') || name.endsWithChar(' '))
+        name = name.dropLastCharacters(1).trim();
+    while (name.startsWithChar('_') || name.startsWithChar('-'))
+        name = name.substring(1).trim();
+    
+    return name;
 }
 
 juce::Array<DetectedSong> StemDetector::scanDirectory(const juce::File& directory) const
@@ -126,22 +140,36 @@ juce::Array<DetectedSong> StemDetector::scanDirectory(const juce::File& director
             continue;
         
         juce::String filename = file.getFileName();
-        juce::String songName = extractSongName(filename);
-        juce::String stemType = detectStemType(filename);
+        StemType stemType = detectStemType(filename);
+        juce::String songName = extractSongName(filename, stemType);
+        
+        if (songName.isEmpty())
+            continue;
         
         // Add to map
         auto& song = songMap[songName];
         song.songName = songName;
-        song.stemFiles.add(file);
-        song.stemTypes.add(stemType);
+        
+        int stemIndex = static_cast<int>(stemType);
+        song.stemFiles[stemIndex] = file;
+        song.stemFound[stemIndex] = true;
     }
     
-    // Convert map to array
+    // Convert map to array, only include songs with at least one stem
     for (auto& pair : songMap)
     {
-        // Only include if there's more than one stem (otherwise it's not a multi-stem song)
-        // Or include all detected audio files
-        songs.add(std::move(pair.second));
+        bool hasAnyStem = false;
+        for (int i = 0; i < 4; ++i)
+        {
+            if (pair.second.stemFound[i])
+            {
+                hasAnyStem = true;
+                break;
+            }
+        }
+        
+        if (hasAnyStem)
+            songs.add(std::move(pair.second));
     }
     
     // Sort by song name
@@ -152,4 +180,3 @@ juce::Array<DetectedSong> StemDetector::scanDirectory(const juce::File& director
     
     return songs;
 }
-

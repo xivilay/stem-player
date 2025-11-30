@@ -271,14 +271,16 @@ void MainScreen::createTrackComponents()
     trackComponents.clear();
     
     auto& engine = audioProcessor.getStemEngine();
-    int numTracks = engine.getNumTracks();
     
-    for (int i = 0; i < numTracks; ++i)
+    // Always create 4 tracks in fixed order: Vocals, Drums, Bass, Other
+    for (int i = 0; i < 4; ++i)
     {
         auto trackComp = std::make_unique<StemTrackComponent>(i);
         
+        // Set track (may be nullptr if stem not found)
         trackComp->setTrack(engine.getTrack(i));
         trackComp->setDrawPlayhead(false);  // Disable individual playheads
+        trackComp->setTrackLoaded(engine.isTrackLoaded(i));
         
         trackComp->onVolumeChanged = [this](int trackIndex, float volume) {
             audioProcessor.getStemEngine().setTrackVolume(trackIndex, volume);

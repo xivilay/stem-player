@@ -33,7 +33,7 @@ void SongListModel::paintListBoxItem(int rowNumber, juce::Graphics& g,
     if (rowIsSelected)
     {
         g.setColour(StemPlayerLookAndFeel::accentPrimary.withAlpha(0.3f));
-        g.fillRoundedRectangle(bounds.toFloat(), 4.0f);
+        g.fillRect(bounds.toFloat());
     }
     
     const auto& song = detectedSongs.getReference(rowNumber);
@@ -44,13 +44,19 @@ void SongListModel::paintListBoxItem(int rowNumber, juce::Graphics& g,
     g.drawText(song.songName, bounds.reduced(8, 0).removeFromTop(height / 2 + 4), 
                juce::Justification::centredLeft, true);
     
-    // Stem count and types
-    juce::String stemInfo = juce::String(song.stemFiles.size()) + " stems: ";
-    for (int i = 0; i < song.stemTypes.size(); ++i)
+    // Show which stems are available
+    juce::String stemInfo;
+    int stemCount = 0;
+    for (int i = 0; i < 4; ++i)
     {
-        if (i > 0) stemInfo += ", ";
-        stemInfo += song.stemTypes[i];
+        if (song.stemFound[i])
+        {
+            if (stemCount > 0) stemInfo += ", ";
+            stemInfo += StemDetector::getStemTypeName(i);
+            stemCount++;
+        }
     }
+    stemInfo = juce::String(stemCount) + " stems: " + stemInfo;
     
     g.setColour(StemPlayerLookAndFeel::textSecondary);
     g.setFont(juce::Font(12.0f));
@@ -76,7 +82,7 @@ SelectionScreen::SelectionScreen(StemPlayerAudioProcessor& processor,
     : audioProcessor(processor), editor(ed)
 {
     // Update detector patterns from settings
-    stemDetector.setPatterns(audioProcessor.getAppSettings().getStemPatterns());
+    stemDetector.setPatterns(audioProcessor.getAppSettings().getStemRegexPatterns());
     
     // Folder path label
     folderLabel.setFont(juce::Font(13.0f));
@@ -186,7 +192,7 @@ void SelectionScreen::resized()
 void SelectionScreen::refresh()
 {
     // Reload patterns from settings
-    stemDetector.setPatterns(audioProcessor.getAppSettings().getStemPatterns());
+    stemDetector.setPatterns(audioProcessor.getAppSettings().getStemRegexPatterns());
     
     // Reload default folder if changed
     auto defaultFolder = audioProcessor.getAppSettings().getDefaultFolder();
@@ -247,6 +253,6 @@ void SelectionScreen::loadSelectedSong()
         return;
     
     const auto& song = detectedSongs.getReference(selectedSongIndex);
-    editor.onSongSelected(song.songName, song.stemFiles);
+    editor.onSongSelected(song.songName, song.stemFiles, song.stemFound);
 }
 

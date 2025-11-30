@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "StemTrack.h"
+#include "StemDetector.h"
 
 class StemEngine
 {
@@ -13,7 +14,8 @@ public:
     void releaseResources();
     void processBlock(juce::AudioBuffer<float>& buffer);
     
-    void loadSong(const juce::String& name, const juce::Array<juce::File>& stemFiles);
+    void loadSong(const juce::String& name, const std::array<juce::File, 4>& stemFiles,
+                  const std::array<bool, 4>& stemFound);
     void unloadSong();
     
     void play();
@@ -35,8 +37,9 @@ public:
     
     const juce::String& getCurrentSongName() const { return currentSongName; }
     
-    int getNumTracks() const { return static_cast<int>(tracks.size()); }
+    static constexpr int getNumTracks() { return 4; }
     StemTrack* getTrack(int index);
+    bool isTrackLoaded(int index) const;
     
     void setTrackVolume(int trackIndex, float volume);
     float getTrackVolume(int trackIndex) const;
@@ -47,7 +50,8 @@ private:
     juce::AudioFormatManager formatManager;
     
     juce::String currentSongName;
-    std::vector<std::unique_ptr<StemTrack>> tracks;
+    std::array<std::unique_ptr<StemTrack>, 4> tracks;
+    std::array<bool, 4> trackLoaded { false, false, false, false };
     
     std::atomic<bool> playing { false };
     std::atomic<int64_t> currentPosition { 0 };

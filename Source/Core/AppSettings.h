@@ -15,9 +15,9 @@ public:
     juce::String getDefaultFolder() const { return defaultFolder; }
     void setDefaultFolder(const juce::String& folder);
     
-    juce::Array<StemPattern>& getStemPatterns() { return stemPatterns; }
-    const juce::Array<StemPattern>& getStemPatterns() const { return stemPatterns; }
-    void setStemPatterns(const juce::Array<StemPattern>& patterns);
+    const std::array<juce::String, 4>& getStemRegexPatterns() const { return stemRegexPatterns; }
+    void setStemRegexPatterns(const std::array<juce::String, 4>& patterns);
+    void resetStemRegexToDefaults();
     
     bool getShowSeparateChannels() const { return showSeparateChannels; }
     void setShowSeparateChannels(bool separate);
@@ -31,7 +31,7 @@ public:
 
 private:
     juce::String defaultFolder;
-    juce::Array<StemPattern> stemPatterns;
+    std::array<juce::String, 4> stemRegexPatterns;
     bool showSeparateChannels { false };  // false = mixed, true = separate channels
     juce::Rectangle<int> windowBounds { 0, 0, 0, 0 };
     

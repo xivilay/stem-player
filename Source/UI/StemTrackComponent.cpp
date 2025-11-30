@@ -4,7 +4,8 @@
 StemTrackComponent::StemTrackComponent(int index)
     : trackIndex(index)
 {
-    // Stem name label - compact
+    // Stem name label - use fixed stem type name
+    stemNameLabel.setText(StemDetector::getStemTypeName(index), juce::dontSendNotification);
     stemNameLabel.setFont(juce::Font(11.0f, juce::Font::bold));
     stemNameLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textSecondary);
     stemNameLabel.setJustificationType(juce::Justification::centred);
@@ -18,7 +19,7 @@ StemTrackComponent::StemTrackComponent(int index)
     volumeSlider.setRange(0.0, 1.0, 0.01);
     volumeSlider.setValue(1.0);
     volumeSlider.onValueChange = [this]() {
-        if (currentTrack != nullptr)
+        if (currentTrack != nullptr && trackLoaded)
         {
             currentTrack->setVolume(static_cast<float>(volumeSlider.getValue()));
             
@@ -44,17 +45,31 @@ void StemTrackComponent::setTrack(StemTrack* track)
 {
     currentTrack = track;
     
+    // Always use fixed stem type name based on index
+    stemNameLabel.setText(StemDetector::getStemTypeName(trackIndex), juce::dontSendNotification);
+    
     if (track != nullptr)
     {
-        stemNameLabel.setText(track->getStemType(), juce::dontSendNotification);
         volumeSlider.setValue(track->getVolume(), juce::dontSendNotification);
         waveformDisplay.setTrack(track);
     }
     else
     {
-        stemNameLabel.setText("", juce::dontSendNotification);
         waveformDisplay.setTrack(nullptr);
     }
+    
+    repaint();
+}
+
+void StemTrackComponent::setTrackLoaded(bool loaded)
+{
+    trackLoaded = loaded;
+    
+    // Dim the controls if not loaded
+    volumeSlider.setEnabled(loaded);
+    
+    float alpha = loaded ? 1.0f : 0.4f;
+    stemNameLabel.setAlpha(alpha);
     
     repaint();
 }
@@ -88,13 +103,30 @@ void StemTrackComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
     
-    // Flat background
-    g.setColour(StemPlayerLookAndFeel::backgroundMedium);
+    // Flat background - slightly darker if not loaded
+    if (trackLoaded)
+        g.setColour(StemPlayerLookAndFeel::backgroundMedium);
+    else
+        g.setColour(StemPlayerLookAndFeel::backgroundDark.brighter(0.1f));
+    
     g.fillRect(bounds);
+    
+    // Color accent bar on left based on stem type
+    g.setColour(getStemColor(trackIndex).withAlpha(trackLoaded ? 1.0f : 0.3f));
+    g.fillRect(bounds.getX(), bounds.getY(), 3.0f, bounds.getHeight());
     
     // Thin bottom border for separation
     g.setColour(StemPlayerLookAndFeel::backgroundDark);
     g.fillRect(bounds.getX(), bounds.getBottom() - 1.0f, bounds.getWidth(), 1.0f);
+    
+    // Show "Not found" message if track not loaded
+    if (!trackLoaded)
+    {
+        g.setColour(StemPlayerLookAndFeel::textSecondary.withAlpha(0.5f));
+        g.setFont(juce::Font(10.0f));
+        auto waveformBounds = waveformDisplay.getBounds();
+        g.drawText("Not found", waveformBounds, juce::Justification::centred, false);
+    }
 }
 
 void StemTrackComponent::resized()
@@ -119,26 +151,18 @@ void StemTrackComponent::resized()
     waveformDisplay.setBounds(bounds);
 }
 
-juce::Colour StemTrackComponent::getStemColor(const juce::String& stemType)
+juce::Colour StemTrackComponent::getStemColor(int stemIndex)
 {
-    juce::String lowerType = stemType.toLowerCase();
-    
-    if (lowerType.contains("vocal"))
-        return juce::Colour(0xfff472b6);  // Pink
-    if (lowerType.contains("drum"))
-        return juce::Colour(0xfffbbf24);  // Amber
-    if (lowerType.contains("bass"))
-        return juce::Colour(0xff818cf8);  // Indigo
-    if (lowerType.contains("piano") || lowerType.contains("keys"))
-        return juce::Colour(0xff34d399);  // Emerald
-    if (lowerType.contains("guitar"))
-        return juce::Colour(0xfff97316);  // Orange
-    if (lowerType.contains("synth"))
-        return juce::Colour(0xffa78bfa);  // Purple
-    if (lowerType.contains("string"))
-        return juce::Colour(0xff22d3ee);  // Cyan
-    if (lowerType.contains("other"))
-        return juce::Colour(0xff94a3b8);  // Slate
-    
-    return StemPlayerLookAndFeel::accentSecondary;
+    switch (stemIndex)
+    {
+        case 0:  // Vocals
+            return juce::Colour(0xfff472b6);  // Pink
+        case 1:  // Drums
+            return juce::Colour(0xfffbbf24);  // Amber
+        case 2:  // Bass
+            return juce::Colour(0xff818cf8);  // Indigo
+        case 3:  // Other
+        default:
+            return juce::Colour(0xff94a3b8);  // Slate
+    }
 }

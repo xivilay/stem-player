@@ -7,30 +7,6 @@
 class StemPlayerAudioProcessor;
 class StemPlayerAudioProcessorEditor;
 
-class PatternListModel : public juce::TableListBoxModel
-{
-public:
-    PatternListModel() = default;
-    
-    void setPatterns(juce::Array<StemPattern>& patterns);
-    juce::Array<StemPattern>& getPatterns() { return *patternsRef; }
-    
-    int getNumRows() override;
-    void paintRowBackground(juce::Graphics& g, int rowNumber, int width, int height,
-                            bool rowIsSelected) override;
-    void paintCell(juce::Graphics& g, int rowNumber, int columnId, int width, int height,
-                   bool rowIsSelected) override;
-    juce::Component* refreshComponentForCell(int rowNumber, int columnId, bool isRowSelected,
-                                              juce::Component* existingComponentToUpdate) override;
-    
-    std::function<void()> onPatternsChanged;
-
-private:
-    juce::Array<StemPattern>* patternsRef { nullptr };
-    
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PatternListModel)
-};
-
 // Individual MIDI assignment row
 class MidiAssignmentRow : public juce::Component,
                            public juce::TextEditor::Listener
@@ -61,6 +37,36 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiAssignmentRow)
 };
 
+// Stem regex pattern row
+class StemPatternRow : public juce::Component,
+                        public juce::TextEditor::Listener
+{
+public:
+    StemPatternRow(int stemIndex, std::array<juce::String, 4>& patterns,
+                   std::function<void()> onChanged);
+    ~StemPatternRow() override;
+    
+    void paint(juce::Graphics& g) override;
+    void resized() override;
+    
+    void updateFromPatterns();
+    void textEditorTextChanged(juce::TextEditor& editor) override;
+    void textEditorReturnKeyPressed(juce::TextEditor& editor) override;
+    void textEditorFocusLost(juce::TextEditor& editor) override;
+
+private:
+    void applyTextValue();
+    
+    int stemIndex;
+    std::array<juce::String, 4>& patterns;
+    std::function<void()> onChange;
+    
+    juce::Label nameLabel;
+    juce::TextEditor regexEditor;
+    
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StemPatternRow)
+};
+
 class SettingsScreen : public juce::Component
 {
 public:
@@ -74,11 +80,10 @@ public:
 
 private:
     void browseForDefaultFolder();
-    void addPattern();
-    void removeSelectedPattern();
     void resetPatternsToDefault();
-    void saveSettings();
+    void savePatterns();
     void updateMidiRows();
+    void updatePatternRows();
     
     StemPlayerAudioProcessor& audioProcessor;
     StemPlayerAudioProcessorEditor& editor;
@@ -96,22 +101,17 @@ private:
     juce::Label displaySectionLabel;
     juce::ToggleButton separateChannelsToggle;
     
+    // Stem patterns section
+    juce::Label patternsSectionLabel;
+    std::array<std::unique_ptr<StemPatternRow>, 4> patternRows;
+    juce::TextButton resetPatternsButton;
+    std::array<juce::String, 4> editingPatterns;
+    
     // MIDI assignment section
     juce::Label midiSectionLabel;
     juce::Viewport midiViewport;
     juce::Component midiContainer;
     std::vector<std::unique_ptr<MidiAssignmentRow>> midiRows;
-    
-    // Patterns section
-    juce::Label patternsSectionLabel;
-    juce::TableListBox patternsTable;
-    PatternListModel patternListModel;
-    juce::TextButton addPatternButton;
-    juce::TextButton removePatternButton;
-    juce::TextButton resetPatternsButton;
-    
-    // Local copy of patterns for editing
-    juce::Array<StemPattern> editingPatterns;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SettingsScreen)
 };

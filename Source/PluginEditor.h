@@ -20,7 +20,8 @@ public:
     void timerCallback() override;
 
     void showScreen(StemPlayerAudioProcessor::Screen screen);
-    void onSongSelected(const juce::String& songName, const juce::Array<juce::File>& stemFiles);
+    void onSongSelected(const juce::String& songName, const std::array<juce::File, 4>& stemFiles, 
+                        const std::array<bool, 4>& stemFound);
 
 private:
     void saveWindowBounds();
