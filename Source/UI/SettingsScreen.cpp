@@ -195,49 +195,54 @@ SettingsScreen::SettingsScreen(StemPlayerAudioProcessor& processor,
     // Load current patterns for editing
     editingPatterns = audioProcessor.getAppSettings().getStemRegexPatterns();
     
-    // Title
-    titleLabel.setText("Settings", juce::dontSendNotification);
-    titleLabel.setFont(juce::Font(24.0f, juce::Font::bold));
-    titleLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textPrimary);
-    titleLabel.setJustificationType(juce::Justification::centredLeft);
-    addAndMakeVisible(titleLabel);
-    
-    // Back button
+    // Back button (stays in main view, not scrollable)
     backButton.setButtonText("< Back");
     backButton.onClick = [this]() {
         editor.showScreen(StemPlayerAudioProcessor::Screen::Selection);
     };
     addAndMakeVisible(backButton);
     
+    // Title (stays in main view, not scrollable)
+    titleLabel.setText("Settings", juce::dontSendNotification);
+    titleLabel.setFont(juce::Font(24.0f, juce::Font::bold));
+    titleLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textPrimary);
+    titleLabel.setJustificationType(juce::Justification::centredLeft);
+    addAndMakeVisible(titleLabel);
+    
+    // Scrollable content viewport
+    contentViewport.setViewedComponent(&contentContainer, false);
+    contentViewport.setScrollBarsShown(true, false);
+    addAndMakeVisible(contentViewport);
+    
     // Default folder section
     folderSectionLabel.setText("Default Folder", juce::dontSendNotification);
     folderSectionLabel.setFont(juce::Font(14.0f, juce::Font::bold));
     folderSectionLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textPrimary);
-    addAndMakeVisible(folderSectionLabel);
+    contentContainer.addAndMakeVisible(folderSectionLabel);
     
     defaultFolderLabel.setFont(juce::Font(12.0f));
     defaultFolderLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textSecondary);
     defaultFolderLabel.setText(audioProcessor.getAppSettings().getDefaultFolder().isEmpty() 
                                ? "Not set" : audioProcessor.getAppSettings().getDefaultFolder(),
                                juce::dontSendNotification);
-    addAndMakeVisible(defaultFolderLabel);
+    contentContainer.addAndMakeVisible(defaultFolderLabel);
     
     browseFolderButton.setButtonText("Browse");
     browseFolderButton.onClick = [this]() { browseForDefaultFolder(); };
-    addAndMakeVisible(browseFolderButton);
+    contentContainer.addAndMakeVisible(browseFolderButton);
     
     clearFolderButton.setButtonText("Clear");
     clearFolderButton.onClick = [this]() {
         audioProcessor.getAppSettings().setDefaultFolder("");
         defaultFolderLabel.setText("Not set", juce::dontSendNotification);
     };
-    addAndMakeVisible(clearFolderButton);
+    contentContainer.addAndMakeVisible(clearFolderButton);
     
     // Display section
     displaySectionLabel.setText("Display", juce::dontSendNotification);
     displaySectionLabel.setFont(juce::Font(14.0f, juce::Font::bold));
     displaySectionLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textPrimary);
-    addAndMakeVisible(displaySectionLabel);
+    contentContainer.addAndMakeVisible(displaySectionLabel);
     
     separateChannelsToggle.setButtonText("Show separate L/R channels");
     separateChannelsToggle.setColour(juce::ToggleButton::textColourId, StemPlayerLookAndFeel::textPrimary);
@@ -247,43 +252,39 @@ SettingsScreen::SettingsScreen(StemPlayerAudioProcessor& processor,
     separateChannelsToggle.onClick = [this]() {
         audioProcessor.getAppSettings().setShowSeparateChannels(separateChannelsToggle.getToggleState());
     };
-    addAndMakeVisible(separateChannelsToggle);
+    contentContainer.addAndMakeVisible(separateChannelsToggle);
     
     // Stem patterns section
     patternsSectionLabel.setText("Stem Detection (Regex)", juce::dontSendNotification);
     patternsSectionLabel.setFont(juce::Font(14.0f, juce::Font::bold));
     patternsSectionLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textPrimary);
-    addAndMakeVisible(patternsSectionLabel);
+    contentContainer.addAndMakeVisible(patternsSectionLabel);
     
     for (int i = 0; i < 4; ++i)
     {
         patternRows[i] = std::make_unique<StemPatternRow>(i, editingPatterns, 
                                                           [this]() { savePatterns(); });
-        addAndMakeVisible(patternRows[i].get());
+        contentContainer.addAndMakeVisible(patternRows[i].get());
     }
     
     resetPatternsButton.setButtonText("Reset to Defaults");
     resetPatternsButton.onClick = [this]() { resetPatternsToDefault(); };
-    addAndMakeVisible(resetPatternsButton);
+    contentContainer.addAndMakeVisible(resetPatternsButton);
     
     // MIDI assignment section
     midiSectionLabel.setText("MIDI Control", juce::dontSendNotification);
     midiSectionLabel.setFont(juce::Font(14.0f, juce::Font::bold));
     midiSectionLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textPrimary);
-    addAndMakeVisible(midiSectionLabel);
+    contentContainer.addAndMakeVisible(midiSectionLabel);
     
     // Create MIDI assignment rows
     for (int i = 0; i < MidiLearnManager::getNumControls(); ++i)
     {
         auto controlType = static_cast<MidiControlType>(i);
         auto row = std::make_unique<MidiAssignmentRow>(controlType, audioProcessor.getMidiLearnManager());
-        midiContainer.addAndMakeVisible(row.get());
+        contentContainer.addAndMakeVisible(row.get());
         midiRows.push_back(std::move(row));
     }
-    
-    midiViewport.setViewedComponent(&midiContainer, false);
-    midiViewport.setScrollBarsShown(true, false);
-    addAndMakeVisible(midiViewport);
     
     // Set up callback for MIDI learn updates
     audioProcessor.getMidiLearnManager().onMappingChanged = [this](MidiControlType, int) {
@@ -305,7 +306,7 @@ void SettingsScreen::resized()
 {
     auto bounds = getLocalBounds().reduced(20);
     
-    // Header row
+    // Header row (fixed, not scrollable)
     auto header = bounds.removeFromTop(36);
     backButton.setBounds(header.removeFromLeft(70));
     header.removeFromLeft(15);
@@ -313,56 +314,62 @@ void SettingsScreen::resized()
     
     bounds.removeFromTop(15);
     
+    // Content viewport takes remaining space
+    contentViewport.setBounds(bounds);
+    
+    // Layout the content
+    layoutContent();
+}
+
+void SettingsScreen::layoutContent()
+{
+    int contentWidth = contentViewport.getWidth() - 16;  // Account for scrollbar
+    int y = 0;
+    
     // Default folder section
-    folderSectionLabel.setBounds(bounds.removeFromTop(20));
-    bounds.removeFromTop(4);
+    folderSectionLabel.setBounds(0, y, contentWidth, 20);
+    y += 24;
     
-    auto folderRow = bounds.removeFromTop(28);
-    clearFolderButton.setBounds(folderRow.removeFromRight(50));
-    folderRow.removeFromRight(6);
-    browseFolderButton.setBounds(folderRow.removeFromRight(60));
-    folderRow.removeFromRight(8);
-    defaultFolderLabel.setBounds(folderRow);
-    
-    bounds.removeFromTop(12);
+    int folderRowHeight = 28;
+    clearFolderButton.setBounds(contentWidth - 50, y, 50, folderRowHeight);
+    browseFolderButton.setBounds(contentWidth - 50 - 6 - 60, y, 60, folderRowHeight);
+    defaultFolderLabel.setBounds(0, y, contentWidth - 50 - 6 - 60 - 8, folderRowHeight);
+    y += folderRowHeight + 16;
     
     // Display section
-    displaySectionLabel.setBounds(bounds.removeFromTop(20));
-    bounds.removeFromTop(4);
-    separateChannelsToggle.setBounds(bounds.removeFromTop(24));
-    
-    bounds.removeFromTop(12);
+    displaySectionLabel.setBounds(0, y, contentWidth, 20);
+    y += 24;
+    separateChannelsToggle.setBounds(0, y, contentWidth, 24);
+    y += 24 + 16;
     
     // Stem patterns section
-    patternsSectionLabel.setBounds(bounds.removeFromTop(20));
-    bounds.removeFromTop(4);
+    patternsSectionLabel.setBounds(0, y, contentWidth, 20);
+    y += 24;
     
     for (int i = 0; i < 4; ++i)
     {
-        patternRows[i]->setBounds(bounds.removeFromTop(28));
-        bounds.removeFromTop(2);
+        patternRows[i]->setBounds(0, y, contentWidth, 28);
+        y += 30;
     }
     
-    resetPatternsButton.setBounds(bounds.removeFromTop(28).removeFromLeft(120));
-    
-    bounds.removeFromTop(12);
+    resetPatternsButton.setBounds(0, y, 120, 28);
+    y += 28 + 16;
     
     // MIDI section
-    midiSectionLabel.setBounds(bounds.removeFromTop(20));
-    bounds.removeFromTop(4);
-    
-    midiViewport.setBounds(bounds);
+    midiSectionLabel.setBounds(0, y, contentWidth, 20);
+    y += 24;
     
     int midiRowHeight = 30;
-    int midiTotalHeight = static_cast<int>(midiRows.size()) * (midiRowHeight + 2);
-    midiContainer.setSize(midiViewport.getWidth() - 12, midiTotalHeight);
-    
-    int y = 0;
     for (auto& row : midiRows)
     {
-        row->setBounds(0, y, midiContainer.getWidth(), midiRowHeight);
+        row->setBounds(0, y, contentWidth, midiRowHeight);
         y += midiRowHeight + 2;
     }
+    
+    y += 20;  // Bottom padding
+    
+    // Set content container size
+    contentContainer.setSize(contentWidth, y);
 }
 
 void SettingsScreen::visibilityChanged()
@@ -372,6 +379,9 @@ void SettingsScreen::visibilityChanged()
         editingPatterns = audioProcessor.getAppSettings().getStemRegexPatterns();
         updatePatternRows();
         updateMidiRows();
+        
+        // Reset scroll position
+        contentViewport.setViewPosition(0, 0);
     }
 }
 

@@ -84,12 +84,17 @@ private:
     void savePatterns();
     void updateMidiRows();
     void updatePatternRows();
+    void layoutContent();
     
     StemPlayerAudioProcessor& audioProcessor;
     StemPlayerAudioProcessorEditor& editor;
     
-    juce::Label titleLabel;
     juce::TextButton backButton;
+    juce::Label titleLabel;
+    
+    // Main scrollable content
+    juce::Viewport contentViewport;
+    juce::Component contentContainer;
     
     // Default folder section
     juce::Label folderSectionLabel;
@@ -109,8 +114,6 @@ private:
     
     // MIDI assignment section
     juce::Label midiSectionLabel;
-    juce::Viewport midiViewport;
-    juce::Component midiContainer;
     std::vector<std::unique_ptr<MidiAssignmentRow>> midiRows;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SettingsScreen)
