@@ -37,52 +37,33 @@ void StemPlayerLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, in
                                               float sliderPosProportional, float rotaryStartAngle,
                                               float rotaryEndAngle, juce::Slider& slider)
 {
-    auto radius = (float)juce::jmin(width / 2, height / 2) - 4.0f;
+    auto radius = (float)juce::jmin(width / 2, height / 2) - 2.0f;
     auto centreX = (float)x + (float)width * 0.5f;
     auto centreY = (float)y + (float)height * 0.5f;
-    auto rx = centreX - radius;
-    auto ry = centreY - radius;
-    auto rw = radius * 2.0f;
     auto angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
 
-    // Outer ring / background
+    // Simple flat circle background
     g.setColour(backgroundLight);
-    g.fillEllipse(rx, ry, rw, rw);
-    
-    // Inner circle (darker)
-    float innerRadius = radius * 0.65f;
-    g.setColour(backgroundDark);
-    g.fillEllipse(centreX - innerRadius, centreY - innerRadius, innerRadius * 2.0f, innerRadius * 2.0f);
+    g.fillEllipse(centreX - radius, centreY - radius, radius * 2.0f, radius * 2.0f);
 
-    // Value arc on the outer ring
+    // Value arc - thin and clean
     juce::Path valueArc;
-    float arcRadius = radius * 0.85f;
+    float arcRadius = radius * 0.75f;
     valueArc.addCentredArc(centreX, centreY, arcRadius, arcRadius, 0.0f, 
                            rotaryStartAngle, angle, true);
     g.setColour(accentPrimary);
-    g.strokePath(valueArc, juce::PathStrokeType(5.0f, juce::PathStrokeType::curved, 
-                                                 juce::PathStrokeType::rounded));
+    g.strokePath(valueArc, juce::PathStrokeType(3.0f, juce::PathStrokeType::curved, 
+                                                 juce::PathStrokeType::butt));
 
-    // Small tick mark at current position
-    float tickLength = radius * 0.2f;
-    float tickInnerRadius = radius * 0.7f;
-    juce::Path tick;
-    tick.addRectangle(-1.5f, -tickInnerRadius - tickLength, 3.0f, tickLength);
-    tick.applyTransform(juce::AffineTransform::rotation(angle).translated(centreX, centreY));
-    g.setColour(textPrimary);
-    g.fillPath(tick);
-
-    // Draw value text in center
+    // Value text in center
     int valuePercent = static_cast<int>(sliderPosProportional * 100.0f + 0.5f);
-    juce::String valueText = juce::String(valuePercent) + "%";
+    juce::String valueText = juce::String(valuePercent);
     
-    float fontSize = juce::jmin(innerRadius * 0.7f, 14.0f);
+    float fontSize = juce::jmin(radius * 0.6f, 12.0f);
     g.setFont(juce::Font(fontSize, juce::Font::bold));
     g.setColour(textPrimary);
-    
-    juce::Rectangle<float> textBounds(centreX - innerRadius, centreY - innerRadius * 0.5f, 
-                                       innerRadius * 2.0f, innerRadius);
-    g.drawText(valueText, textBounds, juce::Justification::centred, false);
+    g.drawText(valueText, centreX - radius, centreY - fontSize * 0.6f, 
+               radius * 2.0f, fontSize * 1.2f, juce::Justification::centred, false);
     
     juce::ignoreUnused(slider);
 }
@@ -144,24 +125,21 @@ void StemPlayerLookAndFeel::drawButtonBackground(juce::Graphics& g, juce::Button
                                                   bool shouldDrawButtonAsHighlighted,
                                                   bool shouldDrawButtonAsDown)
 {
-    auto bounds = button.getLocalBounds().toFloat().reduced(1.0f);
+    auto bounds = button.getLocalBounds().toFloat();
     
     juce::Colour baseColour = backgroundLight;
     
     if (shouldDrawButtonAsDown)
         baseColour = accentPrimary;
     else if (shouldDrawButtonAsHighlighted)
-        baseColour = backgroundLight.brighter(0.2f);
+        baseColour = backgroundLight.brighter(0.15f);
     
     if (button.getToggleState())
         baseColour = accentPrimary;
     
+    // Flat metro-style button
     g.setColour(baseColour);
-    g.fillRoundedRectangle(bounds, 6.0f);
-    
-    // Subtle border
-    g.setColour(baseColour.brighter(0.1f));
-    g.drawRoundedRectangle(bounds, 6.0f, 1.0f);
+    g.fillRect(bounds);
 }
 
 void StemPlayerLookAndFeel::drawButtonText(juce::Graphics& g, juce::TextButton& button,

@@ -4,10 +4,10 @@
 StemTrackComponent::StemTrackComponent(int index)
     : trackIndex(index)
 {
-    // Stem name label
-    stemNameLabel.setFont(juce::Font(16.0f, juce::Font::bold));
-    stemNameLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textPrimary);
-    stemNameLabel.setJustificationType(juce::Justification::centredLeft);
+    // Stem name label - compact
+    stemNameLabel.setFont(juce::Font(11.0f, juce::Font::bold));
+    stemNameLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textSecondary);
+    stemNameLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(stemNameLabel);
     
     // Volume slider (rotary knob with value displayed inside)
@@ -88,40 +88,34 @@ void StemTrackComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
     
-    // Background with stem type color accent
+    // Flat background
     g.setColour(StemPlayerLookAndFeel::backgroundMedium);
-    g.fillRoundedRectangle(bounds, 8.0f);
+    g.fillRect(bounds);
     
-    // Color accent bar on left
-    if (currentTrack != nullptr)
-    {
-        g.setColour(getStemColor(currentTrack->getStemType()));
-        g.fillRoundedRectangle(bounds.getX(), bounds.getY(), 4.0f, bounds.getHeight(), 2.0f);
-    }
-    
-    // Subtle border
-    g.setColour(StemPlayerLookAndFeel::backgroundLight);
-    g.drawRoundedRectangle(bounds.reduced(0.5f), 8.0f, 1.0f);
+    // Thin bottom border for separation
+    g.setColour(StemPlayerLookAndFeel::backgroundDark);
+    g.fillRect(bounds.getX(), bounds.getBottom() - 1.0f, bounds.getWidth(), 1.0f);
 }
 
 void StemTrackComponent::resized()
 {
-    auto bounds = getLocalBounds().reduced(12, 8);
+    auto bounds = getLocalBounds();
     
-    // Left side: stem name and volume knob
-    auto leftArea = bounds.removeFromLeft(90);
+    // Left side: compact controls area
+    auto leftArea = bounds.removeFromLeft(70);
+    leftArea.reduce(4, 4);
     
     // Stem name at top
-    stemNameLabel.setBounds(leftArea.removeFromTop(20));
+    stemNameLabel.setBounds(leftArea.removeFromTop(16));
     leftArea.removeFromTop(2);
     
     // Rotary knob takes remaining space (centered)
-    int knobSize = juce::jmin(leftArea.getWidth(), leftArea.getHeight());
+    int knobSize = juce::jmin(leftArea.getWidth() - 4, leftArea.getHeight() - 4);
+    knobSize = juce::jmax(knobSize, 40);
     auto knobBounds = leftArea.withSizeKeepingCentre(knobSize, knobSize);
     volumeSlider.setBounds(knobBounds);
     
-    // Rest: waveform display
-    bounds.removeFromLeft(8);
+    // Waveform takes full remaining height
     waveformDisplay.setBounds(bounds);
 }
 

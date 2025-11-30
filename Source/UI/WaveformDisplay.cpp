@@ -44,18 +44,18 @@ void WaveformDisplay::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
     
-    // Background with rounded corners
+    // Flat background
     g.setColour(backgroundColour);
-    g.fillRoundedRectangle(bounds, 6.0f);
+    g.fillRect(bounds);
     
-    // Draw waveform
+    // Draw waveform - full height
     if (currentTrack != nullptr && currentTrack->getThumbnail() != nullptr)
     {
         auto* thumbnail = currentTrack->getThumbnail();
         
         if (thumbnail->getTotalLength() > 0)
         {
-            auto waveformBounds = bounds.reduced(4.0f, 8.0f);
+            auto waveformBounds = bounds.reduced(2.0f, 2.0f);
             int numChannels = thumbnail->getNumChannels();
             
             if (showSeparateChannels && numChannels > 1)
@@ -130,26 +130,16 @@ void WaveformDisplay::paint(juce::Graphics& g)
         g.drawText("No waveform", bounds, juce::Justification::centred);
     }
     
-    // Draw playhead (only if enabled)
+    // Draw playhead (only if enabled) - minimal style
     if (drawPlayhead && playbackPosition > 0.0 && playbackPosition <= 1.0)
     {
-        float playheadX = bounds.getX() + 4.0f + 
-                          (float)playbackPosition * (bounds.getWidth() - 8.0f);
+        float playheadX = bounds.getX() + 2.0f + 
+                          (float)playbackPosition * (bounds.getWidth() - 4.0f);
         
-        // Glow effect
-        g.setColour(playheadColour.withAlpha(0.3f));
-        g.fillRoundedRectangle(playheadX - 4.0f, bounds.getY() + 2.0f, 
-                               8.0f, bounds.getHeight() - 4.0f, 2.0f);
-        
-        // Main playhead line
+        // Simple vertical line
         g.setColour(playheadColour);
-        g.fillRoundedRectangle(playheadX - 1.5f, bounds.getY() + 2.0f, 
-                               3.0f, bounds.getHeight() - 4.0f, 1.5f);
+        g.fillRect(playheadX - 1.0f, bounds.getY(), 2.0f, bounds.getHeight());
     }
-    
-    // Border
-    g.setColour(StemPlayerLookAndFeel::backgroundDark);
-    g.drawRoundedRectangle(bounds.reduced(0.5f), 6.0f, 1.0f);
 }
 
 void WaveformDisplay::resized()

@@ -17,22 +17,16 @@ void PlayheadOverlay::paint(juce::Graphics& g)
     
     if (playbackPosition >= 0.0 && playbackPosition <= 1.0)
     {
-        // The overlay is now sized to match the waveform area exactly
-        float playheadX = 4.0f + (float)playbackPosition * ((float)getWidth() - 8.0f);
+        // Minimal style - simple vertical line
+        float playheadX = 2.0f + (float)playbackPosition * ((float)getWidth() - 4.0f);
         
-        // Glow effect
-        g.setColour(StemPlayerLookAndFeel::playheadColor.withAlpha(0.3f));
-        g.fillRoundedRectangle(playheadX - 5.0f, 0.0f, 
-                               10.0f, (float)getHeight(), 2.0f);
+        // Thin glow
+        g.setColour(StemPlayerLookAndFeel::playheadColor.withAlpha(0.2f));
+        g.fillRect(playheadX - 2.0f, 0.0f, 4.0f, (float)getHeight());
         
-        // Main playhead line
+        // Main line
         g.setColour(StemPlayerLookAndFeel::playheadColor);
-        g.fillRoundedRectangle(playheadX - 1.5f, 0.0f, 
-                               3.0f, (float)getHeight(), 1.5f);
-        
-        // Top and bottom caps for visibility
-        g.fillEllipse(playheadX - 5.0f, -2.0f, 10.0f, 10.0f);
-        g.fillEllipse(playheadX - 5.0f, (float)getHeight() - 8.0f, 10.0f, 10.0f);
+        g.fillRect(playheadX - 1.0f, 0.0f, 2.0f, (float)getHeight());
     }
 }
 
@@ -233,34 +227,30 @@ void MainScreen::resized()
     titleLabel.setVisible(false);  // Hide "Now Playing" label to save space
     songNameLabel.setBounds(header);
     
-    // Tracks area
-    bounds.removeFromTop(10);
-    auto viewportBounds = bounds.reduced(15, 0);
+    // Tracks area - full width, no padding
+    auto viewportBounds = bounds;
     tracksViewport.setBounds(viewportBounds);
     
-    // Calculate track height based on available space - all tracks visible
+    // Calculate track height based on available space - all tracks visible, no gaps
     int numTracks = static_cast<int>(trackComponents.size());
-    int spacing = 8;
     int availableHeight = viewportBounds.getHeight();
     
-    int trackHeight = 80;  // Minimum default
+    int trackHeight = 60;  // Minimum default
     if (numTracks > 0)
     {
-        // Calculate height to fit all tracks with spacing
-        int totalSpacing = (numTracks - 1) * spacing;
-        trackHeight = (availableHeight - totalSpacing) / numTracks;
-        trackHeight = juce::jmax(60, trackHeight);  // Minimum track height
+        trackHeight = availableHeight / numTracks;
+        trackHeight = juce::jmax(50, trackHeight);  // Minimum track height
     }
     
-    int totalHeight = numTracks > 0 ? numTracks * trackHeight + (numTracks - 1) * spacing : 0;
-    tracksContainer.setSize(tracksViewport.getWidth() - 4, totalHeight);
+    int totalHeight = numTracks * trackHeight;
+    tracksContainer.setSize(tracksViewport.getWidth(), totalHeight);
     
-    // Layout track components
+    // Layout track components - no gaps
     int y = 0;
     for (auto& trackComp : trackComponents)
     {
         trackComp->setBounds(0, y, tracksContainer.getWidth(), trackHeight);
-        y += trackHeight + spacing;
+        y += trackHeight;
     }
     
     // Position and size playhead overlay will be set in updatePlayheadOverlay
