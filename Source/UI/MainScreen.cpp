@@ -122,9 +122,9 @@ MainScreen::MainScreen(StemPlayerAudioProcessor& processor,
     timeLabel.setText("0:00 / 0:00", juce::dontSendNotification);
     addAndMakeVisible(timeLabel);
     
-    // Tracks viewport
+    // Tracks viewport (no scrolling - all tracks fit on screen)
     tracksViewport.setViewedComponent(&tracksContainer, false);
-    tracksViewport.setScrollBarsShown(true, false);
+    tracksViewport.setScrollBarsShown(false, false);
     addAndMakeVisible(tracksViewport);
     
     // Playhead overlay (added after viewport so it's on top)
@@ -237,12 +237,22 @@ void MainScreen::resized()
     auto viewportBounds = bounds.reduced(15, 0);
     tracksViewport.setBounds(viewportBounds);
     
-    // Update tracks container size
-    int trackHeight = 140;
-    int spacing = 10;
-    int totalHeight = (int)trackComponents.size() * (trackHeight + spacing);
-    tracksContainer.setSize(tracksViewport.getWidth() - 20, 
-                           juce::jmax(totalHeight, tracksViewport.getHeight()));
+    // Calculate track height based on available space - all tracks visible
+    int numTracks = static_cast<int>(trackComponents.size());
+    int spacing = 8;
+    int availableHeight = viewportBounds.getHeight();
+    
+    int trackHeight = 80;  // Minimum default
+    if (numTracks > 0)
+    {
+        // Calculate height to fit all tracks with spacing
+        int totalSpacing = (numTracks - 1) * spacing;
+        trackHeight = (availableHeight - totalSpacing) / numTracks;
+        trackHeight = juce::jmax(60, trackHeight);  // Minimum track height
+    }
+    
+    int totalHeight = numTracks > 0 ? numTracks * trackHeight + (numTracks - 1) * spacing : 0;
+    tracksContainer.setSize(tracksViewport.getWidth() - 4, totalHeight);
     
     // Layout track components
     int y = 0;
