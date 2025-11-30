@@ -69,32 +69,25 @@ void WaveformDisplay::paint(juce::Graphics& g)
                     auto channelBounds = waveformBounds.withHeight(channelHeight - channelSpacing)
                                                        .withY(waveformBounds.getY() + ch * channelHeight);
                     
-                    // Use different color for each channel
-                    juce::Colour channelColour = (ch == 0) ? waveformColour : waveformColourRight;
+                    // Use stem color with slight variation for L/R
+                    float alpha = (ch == 0) ? 1.0f : 0.75f;
                     
                     // Draw channel label
-                    g.setColour(channelColour.withAlpha(0.6f));
+                    g.setColour(waveformColour.withAlpha(0.5f));
                     g.setFont(juce::Font(10.0f));
                     juce::String channelLabel = (ch == 0) ? "L" : "R";
                     g.drawText(channelLabel, channelBounds.removeFromLeft(14).toNearestInt(), 
                                juce::Justification::centred);
                     
-                    // Gradient for this channel
-                    juce::ColourGradient gradient(channelColour.withAlpha(0.9f), 
-                                                  channelBounds.getX(), channelBounds.getCentreY(),
-                                                  channelColour.withAlpha(0.4f), 
-                                                  channelBounds.getX(), channelBounds.getBottom(),
-                                                  false);
-                    g.setGradientFill(gradient);
-                    
-                    // Draw single channel
+                    // Draw channel waveform
+                    g.setColour(waveformColour.withAlpha(alpha));
                     thumbnail->drawChannel(g, channelBounds.toNearestInt(), 
                                            0.0, thumbnail->getTotalLength(), ch, 1.0f);
                     
                     // Subtle separator line between channels
                     if (ch < numChannels - 1)
                     {
-                        g.setColour(StemPlayerLookAndFeel::backgroundDark.withAlpha(0.5f));
+                        g.setColour(backgroundColour.darker(0.3f));
                         g.drawHorizontalLine(static_cast<int>(channelBounds.getBottom() + channelSpacing / 2), 
                                              waveformBounds.getX(), waveformBounds.getRight());
                     }
@@ -102,21 +95,15 @@ void WaveformDisplay::paint(juce::Graphics& g)
             }
             else
             {
-                // Mixed mode - overlay all channels on top of each other
-                int numChannels = thumbnail->getNumChannels();
+                // Mixed mode - overlay all channels with the stem color
+                int numChannelsToDraw = thumbnail->getNumChannels();
                 
-                for (int ch = 0; ch < numChannels; ++ch)
+                for (int ch = 0; ch < numChannelsToDraw; ++ch)
                 {
                     // Use slightly different alpha for each channel to create depth
-                    float alpha = (ch == 0) ? 0.9f : 0.7f;
+                    float alpha = (ch == 0) ? 1.0f : 0.7f;
                     
-                    juce::ColourGradient gradient(waveformColour.withAlpha(alpha), 
-                                                  waveformBounds.getX(), waveformBounds.getCentreY(),
-                                                  waveformColour.withAlpha(alpha * 0.4f), 
-                                                  waveformBounds.getX(), waveformBounds.getBottom(),
-                                                  false);
-                    g.setGradientFill(gradient);
-                    
+                    g.setColour(waveformColour.withAlpha(alpha));
                     thumbnail->drawChannel(g, waveformBounds.toNearestInt(), 
                                            0.0, thumbnail->getTotalLength(), ch, 1.0f);
                 }

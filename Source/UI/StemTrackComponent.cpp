@@ -58,6 +58,10 @@ void StemTrackComponent::setTrack(StemTrack* track)
         waveformDisplay.setTrack(nullptr);
     }
     
+    // Set colors - dark background, light waveform
+    waveformDisplay.setBackgroundColour(getStemBackgroundColor(trackIndex));
+    waveformDisplay.setWaveformColour(getStemColor(trackIndex));
+    
     repaint();
 }
 
@@ -70,6 +74,21 @@ void StemTrackComponent::setTrackLoaded(bool loaded)
     
     float alpha = loaded ? 1.0f : 0.4f;
     stemNameLabel.setAlpha(alpha);
+    
+    // Set colors - darker/dimmer if not loaded
+    auto bgColor = getStemBackgroundColor(trackIndex);
+    auto waveColor = getStemColor(trackIndex);
+    
+    if (loaded)
+    {
+        waveformDisplay.setBackgroundColour(bgColor);
+        waveformDisplay.setWaveformColour(waveColor);
+    }
+    else
+    {
+        waveformDisplay.setBackgroundColour(bgColor.darker(0.5f));
+        waveformDisplay.setWaveformColour(waveColor.withAlpha(0.3f));
+    }
     
     repaint();
 }
@@ -103,21 +122,13 @@ void StemTrackComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
     
-    // Flat background - slightly darker if not loaded
-    if (trackLoaded)
-        g.setColour(StemPlayerLookAndFeel::backgroundMedium);
-    else
-        g.setColour(StemPlayerLookAndFeel::backgroundDark.brighter(0.1f));
-    
-    g.fillRect(bounds);
-    
-    // Color accent bar on left based on stem type
-    g.setColour(getStemColor(trackIndex).withAlpha(trackLoaded ? 1.0f : 0.3f));
-    g.fillRect(bounds.getX(), bounds.getY(), 3.0f, bounds.getHeight());
+    // Flat background for controls area
+    g.setColour(StemPlayerLookAndFeel::backgroundMedium);
+    g.fillRect(bounds.removeFromLeft(70.0f));
     
     // Thin bottom border for separation
     g.setColour(StemPlayerLookAndFeel::backgroundDark);
-    g.fillRect(bounds.getX(), bounds.getBottom() - 1.0f, bounds.getWidth(), 1.0f);
+    g.fillRect(getLocalBounds().toFloat().removeFromBottom(1.0f));
     
     // Show "Not found" message if track not loaded
     if (!trackLoaded)
@@ -153,16 +164,34 @@ void StemTrackComponent::resized()
 
 juce::Colour StemTrackComponent::getStemColor(int stemIndex)
 {
+    // Modern vibrant palette - returns the "light" accent color
     switch (stemIndex)
     {
-        case 0:  // Vocals
-            return juce::Colour(0xfff472b6);  // Pink
-        case 1:  // Drums
-            return juce::Colour(0xfffbbf24);  // Amber
-        case 2:  // Bass
-            return juce::Colour(0xff818cf8);  // Indigo
-        case 3:  // Other
+        case 0:  // Vocals - Coral/Salmon
+            return juce::Colour(0xffff6b6b);
+        case 1:  // Drums - Golden Yellow
+            return juce::Colour(0xfffeca57);
+        case 2:  // Bass - Electric Blue
+            return juce::Colour(0xff54a0ff);
+        case 3:  // Other - Mint Green
         default:
-            return juce::Colour(0xff94a3b8);  // Slate
+            return juce::Colour(0xff5cd85c);
+    }
+}
+
+juce::Colour StemTrackComponent::getStemBackgroundColor(int stemIndex)
+{
+    // Dark versions of the palette colors for backgrounds
+    switch (stemIndex)
+    {
+        case 0:  // Vocals - Dark Coral
+            return juce::Colour(0xff2d1f1f);
+        case 1:  // Drums - Dark Gold
+            return juce::Colour(0xff2d2a1a);
+        case 2:  // Bass - Dark Blue
+            return juce::Colour(0xff1a2333);
+        case 3:  // Other - Dark Mint
+        default:
+            return juce::Colour(0xff1a2d1a);
     }
 }

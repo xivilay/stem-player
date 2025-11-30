@@ -38,6 +38,7 @@ private:
     
     // Colors for different stem types
     juce::Colour getStemColor(int stemIndex);
+    juce::Colour getStemBackgroundColor(int stemIndex);
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StemTrackComponent)
 };

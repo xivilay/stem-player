@@ -14,6 +14,8 @@ public:
     void setPlaybackPosition(double normalizedPosition);
     void setShowSeparateChannels(bool separate);
     void setDrawPlayhead(bool shouldDraw) { drawPlayhead = shouldDraw; repaint(); }
+    void setBackgroundColour(juce::Colour colour) { backgroundColour = colour; repaint(); }
+    void setWaveformColour(juce::Colour colour) { waveformColour = colour; repaint(); }
     
     void paint(juce::Graphics& g) override;
     void resized() override;
