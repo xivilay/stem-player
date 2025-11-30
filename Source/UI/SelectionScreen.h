@@ -51,7 +51,6 @@ private:
     
     StemDetector stemDetector;
     
-    juce::Label titleLabel;
     juce::Label folderLabel;
     juce::TextButton browseButton;
     juce::TextButton settingsButton;

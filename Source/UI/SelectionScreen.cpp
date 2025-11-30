@@ -78,21 +78,26 @@ SelectionScreen::SelectionScreen(StemPlayerAudioProcessor& processor,
     // Update detector patterns from settings
     stemDetector.setPatterns(audioProcessor.getAppSettings().getStemPatterns());
     
-    // Title
-    titleLabel.setText("Stem Player", juce::dontSendNotification);
-    titleLabel.setFont(juce::Font(32.0f, juce::Font::bold));
-    titleLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textPrimary);
-    titleLabel.setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(titleLabel);
-    
     // Folder path label
     folderLabel.setFont(juce::Font(13.0f));
-    folderLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textSecondary);
+    folderLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textPrimary);
     folderLabel.setJustificationType(juce::Justification::centredLeft);
     addAndMakeVisible(folderLabel);
     
+    // Status label (songs count)
+    statusLabel.setFont(juce::Font(12.0f));
+    statusLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textSecondary);
+    statusLabel.setJustificationType(juce::Justification::centredLeft);
+    addAndMakeVisible(statusLabel);
+    
+    // Load button
+    loadButton.setButtonText("Load");
+    loadButton.onClick = [this]() { loadSelectedSong(); };
+    loadButton.setEnabled(false);
+    addAndMakeVisible(loadButton);
+    
     // Browse button
-    browseButton.setButtonText("Browse Folder");
+    browseButton.setButtonText("Browse");
     browseButton.onClick = [this]() { browseForFolder(); };
     addAndMakeVisible(browseButton);
     
@@ -102,12 +107,6 @@ SelectionScreen::SelectionScreen(StemPlayerAudioProcessor& processor,
         editor.showScreen(StemPlayerAudioProcessor::Screen::Settings);
     };
     addAndMakeVisible(settingsButton);
-    
-    // Load button
-    loadButton.setButtonText("Load Song");
-    loadButton.onClick = [this]() { loadSelectedSong(); };
-    loadButton.setEnabled(false);
-    addAndMakeVisible(loadButton);
     
     // Song list
     songListModel.onSongSelected = [this](int row) {
@@ -123,12 +122,6 @@ SelectionScreen::SelectionScreen(StemPlayerAudioProcessor& processor,
     songListBox.setColour(juce::ListBox::backgroundColourId, 
                           StemPlayerLookAndFeel::backgroundLight);
     addAndMakeVisible(songListBox);
-    
-    // Status label
-    statusLabel.setFont(juce::Font(12.0f));
-    statusLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textSecondary);
-    statusLabel.setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(statusLabel);
     
     // Load default folder if set
     auto defaultFolder = audioProcessor.getAppSettings().getDefaultFolder();
@@ -148,44 +141,45 @@ void SelectionScreen::paint(juce::Graphics& g)
 {
     g.fillAll(StemPlayerLookAndFeel::backgroundDark);
     
-    // Decorative gradient overlay
+    // Subtle gradient at top
     juce::ColourGradient gradient(
-        StemPlayerLookAndFeel::accentPrimary.withAlpha(0.05f), 0, 0,
-        juce::Colours::transparentBlack, 0, (float)getHeight() * 0.4f, false);
+        StemPlayerLookAndFeel::accentPrimary.withAlpha(0.08f), 
+        (float)getWidth() * 0.5f, 0,
+        juce::Colours::transparentBlack, 
+        (float)getWidth() * 0.5f, 60, false);
     g.setGradientFill(gradient);
-    g.fillRect(getLocalBounds());
+    g.fillRect(getLocalBounds().removeFromTop(60));
 }
 
 void SelectionScreen::resized()
 {
-    auto bounds = getLocalBounds().reduced(30);
+    auto bounds = getLocalBounds();
     
-    // Title area
-    titleLabel.setBounds(bounds.removeFromTop(60));
-    bounds.removeFromTop(20);
+    // Single header row with all controls
+    auto header = bounds.removeFromTop(50);
+    header.reduce(15, 8);
     
-    // Folder selection row
-    auto folderRow = bounds.removeFromTop(40);
-    browseButton.setBounds(folderRow.removeFromRight(120));
-    folderRow.removeFromRight(10);
-    settingsButton.setBounds(folderRow.removeFromRight(100));
-    folderRow.removeFromRight(10);
-    folderLabel.setBounds(folderRow);
+    // Settings button on right
+    settingsButton.setBounds(header.removeFromRight(70));
+    header.removeFromRight(8);
     
-    bounds.removeFromTop(20);
+    // Browse button
+    browseButton.setBounds(header.removeFromRight(70));
+    header.removeFromRight(8);
     
-    // Load button at bottom
-    auto bottomRow = bounds.removeFromBottom(45);
-    loadButton.setBounds(bottomRow.withSizeKeepingCentre(200, 40));
+    // Load button
+    loadButton.setBounds(header.removeFromRight(60));
+    header.removeFromRight(15);
     
-    bounds.removeFromBottom(10);
+    // Status label (song count)
+    statusLabel.setBounds(header.removeFromRight(100));
+    header.removeFromRight(10);
     
-    // Status at bottom
-    statusLabel.setBounds(bounds.removeFromBottom(24));
-    
-    bounds.removeFromBottom(10);
+    // Folder path takes remaining space
+    folderLabel.setBounds(header);
     
     // Song list takes remaining space
+    bounds.reduce(15, 10);
     songListBox.setBounds(bounds);
 }
 
