@@ -10,30 +10,23 @@ StemTrackComponent::StemTrackComponent(int index)
     stemNameLabel.setJustificationType(juce::Justification::centredLeft);
     addAndMakeVisible(stemNameLabel);
     
-    // Volume slider
-    volumeSlider.setSliderStyle(juce::Slider::LinearVertical);
+    // Volume slider (rotary knob with value displayed inside)
+    volumeSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     volumeSlider.setTextBoxStyle(juce::Slider::NoTextBox, true, 0, 0);
+    volumeSlider.setRotaryParameters(juce::MathConstants<float>::pi * 1.25f,
+                                      juce::MathConstants<float>::pi * 2.75f, true);
     volumeSlider.setRange(0.0, 1.0, 0.01);
     volumeSlider.setValue(1.0);
     volumeSlider.onValueChange = [this]() {
         if (currentTrack != nullptr)
         {
             currentTrack->setVolume(static_cast<float>(volumeSlider.getValue()));
-            volumeLabel.setText(juce::String(static_cast<int>(volumeSlider.getValue() * 100)) + "%", 
-                               juce::dontSendNotification);
             
             if (onVolumeChanged)
                 onVolumeChanged(trackIndex, static_cast<float>(volumeSlider.getValue()));
         }
     };
     addAndMakeVisible(volumeSlider);
-    
-    // Volume percentage label
-    volumeLabel.setFont(juce::Font(12.0f));
-    volumeLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textSecondary);
-    volumeLabel.setJustificationType(juce::Justification::centred);
-    volumeLabel.setText("100%", juce::dontSendNotification);
-    addAndMakeVisible(volumeLabel);
     
     // Waveform display
     waveformDisplay.onPositionChanged = [this](double pos) {
@@ -115,14 +108,17 @@ void StemTrackComponent::resized()
 {
     auto bounds = getLocalBounds().reduced(12, 8);
     
-    // Left side: stem name and volume controls
-    auto leftArea = bounds.removeFromLeft(80);
+    // Left side: stem name and volume knob
+    auto leftArea = bounds.removeFromLeft(90);
     
-    stemNameLabel.setBounds(leftArea.removeFromTop(24));
+    // Stem name at top
+    stemNameLabel.setBounds(leftArea.removeFromTop(20));
+    leftArea.removeFromTop(2);
     
-    auto sliderArea = leftArea.reduced(20, 4);
-    volumeSlider.setBounds(sliderArea.removeFromTop(sliderArea.getHeight() - 18));
-    volumeLabel.setBounds(sliderArea);
+    // Rotary knob takes remaining space (centered)
+    int knobSize = juce::jmin(leftArea.getWidth(), leftArea.getHeight());
+    auto knobBounds = leftArea.withSizeKeepingCentre(knobSize, knobSize);
+    volumeSlider.setBounds(knobBounds);
     
     // Rest: waveform display
     bounds.removeFromLeft(8);

@@ -31,7 +31,6 @@ private:
     
     juce::Label stemNameLabel;
     juce::Slider volumeSlider;
-    juce::Label volumeLabel;
     WaveformDisplay waveformDisplay;
     
     // Colors for different stem types
