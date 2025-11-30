@@ -1,0 +1,160 @@
+name: Build Stem Player
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          brew install cmake ninja
+
+      - name: Configure CMake
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Upload macOS Standalone
+        uses: actions/upload-artifact@v4
+        with:
+          name: StemPlayer-macOS-Standalone
+          path: build/StemPlayer_artefacts/Release/Standalone/*.app
+          if-no-files-found: warn
+
+      - name: Upload macOS VST3
+        uses: actions/upload-artifact@v4
+        with:
+          name: StemPlayer-macOS-VST3
+          path: build/StemPlayer_artefacts/Release/VST3/*.vst3
+          if-no-files-found: warn
+
+      - name: Upload macOS AU
+        uses: actions/upload-artifact@v4
+        with:
+          name: StemPlayer-macOS-AU
+          path: build/StemPlayer_artefacts/Release/AU/*.component
+          if-no-files-found: warn
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Upload Windows Standalone
+        uses: actions/upload-artifact@v4
+        with:
+          name: StemPlayer-Windows-Standalone
+          path: build/StemPlayer_artefacts/Release/Standalone/*.exe
+          if-no-files-found: warn
+
+      - name: Upload Windows VST3
+        uses: actions/upload-artifact@v4
+        with:
+          name: StemPlayer-Windows-VST3
+          path: build/StemPlayer_artefacts/Release/VST3/*.vst3
+          if-no-files-found: warn
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            libasound2-dev \
+            libjack-jackd2-dev \
+            ladspa-sdk \
+            libcurl4-openssl-dev \
+            libfreetype6-dev \
+            libx11-dev \
+            libxcomposite-dev \
+            libxcursor-dev \
+            libxext-dev \
+            libxinerama-dev \
+            libxrandr-dev \
+            libxrender-dev \
+            libwebkit2gtk-4.0-dev \
+            libglu1-mesa-dev \
+            mesa-common-dev
+
+      - name: Configure CMake
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Upload Linux Standalone
+        uses: actions/upload-artifact@v4
+        with:
+          name: StemPlayer-Linux-Standalone
+          path: build/StemPlayer_artefacts/Release/Standalone/*
+          if-no-files-found: warn
+
+      - name: Upload Linux VST3
+        uses: actions/upload-artifact@v4
+        with:
+          name: StemPlayer-Linux-VST3
+          path: build/StemPlayer_artefacts/Release/VST3/*.vst3
+          if-no-files-found: warn
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          brew install cmake ninja
+
+      - name: Configure CMake for iOS
+        run: |
+          cmake -B build-ios -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
+            -DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM="" \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="" \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO
+
+      - name: Build iOS
+        run: |
+          cmake --build build-ios --config Release -- -sdk iphoneos -allowProvisioningUpdates CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload iOS Standalone
+        uses: actions/upload-artifact@v4
+        with:
+          name: StemPlayer-iOS-Standalone
+          path: build-ios/StemPlayer_artefacts/Release-iphoneos/Standalone/*.app
+          if-no-files-found: warn
+
+      - name: Upload iOS AUv3
+        uses: actions/upload-artifact@v4
+        with:
+          name: StemPlayer-iOS-AUv3
+          path: build-ios/StemPlayer_artefacts/Release-iphoneos/AUv3/*.appex
+          if-no-files-found: warn
+
