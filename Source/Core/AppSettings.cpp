@@ -33,6 +33,14 @@ void AppSettings::loadSettings()
         defaultFolder = xml->getStringAttribute("defaultFolder", "");
         showSeparateChannels = xml->getBoolAttribute("showSeparateChannels", false);
         
+        // Load window bounds
+        int wx = xml->getIntAttribute("windowX", 0);
+        int wy = xml->getIntAttribute("windowY", 0);
+        int ww = xml->getIntAttribute("windowWidth", 0);
+        int wh = xml->getIntAttribute("windowHeight", 0);
+        if (ww > 0 && wh > 0)
+            windowBounds = juce::Rectangle<int>(wx, wy, ww, wh);
+        
         auto patternsElement = xml->getChildByName("StemPatterns");
         if (patternsElement != nullptr)
         {
@@ -60,6 +68,15 @@ void AppSettings::saveSettings()
     
     xml->setAttribute("defaultFolder", defaultFolder);
     xml->setAttribute("showSeparateChannels", showSeparateChannels);
+    
+    // Save window bounds
+    if (windowBounds.getWidth() > 0 && windowBounds.getHeight() > 0)
+    {
+        xml->setAttribute("windowX", windowBounds.getX());
+        xml->setAttribute("windowY", windowBounds.getY());
+        xml->setAttribute("windowWidth", windowBounds.getWidth());
+        xml->setAttribute("windowHeight", windowBounds.getHeight());
+    }
     
     auto* patternsElement = xml->createNewChildElement("StemPatterns");
     
@@ -89,6 +106,12 @@ void AppSettings::setStemPatterns(const juce::Array<StemPattern>& patterns)
 void AppSettings::setShowSeparateChannels(bool separate)
 {
     showSeparateChannels = separate;
+    saveSettings();
+}
+
+void AppSettings::setWindowBounds(juce::Rectangle<int> bounds)
+{
+    windowBounds = bounds;
     saveSettings();
 }
 

@@ -16,7 +16,18 @@ StemPlayerAudioProcessorEditor::StemPlayerAudioProcessorEditor(StemPlayerAudioPr
     
     showScreen(audioProcessor.getCurrentScreen());
     
-    setSize(900, 700);
+    // Load saved window size or use default
+    auto& settings = audioProcessor.getAppSettings();
+    if (settings.hasWindowBounds())
+    {
+        auto bounds = settings.getWindowBounds();
+        setSize(bounds.getWidth(), bounds.getHeight());
+    }
+    else
+    {
+        setSize(900, 700);
+    }
+    
     setResizable(true, true);
     setResizeLimits(600, 400, 1920, 1080);
     
@@ -41,6 +52,24 @@ void StemPlayerAudioProcessorEditor::resized()
     selectionScreen->setBounds(bounds);
     mainScreen->setBounds(bounds);
     settingsScreen->setBounds(bounds);
+    
+    saveWindowBounds();
+}
+
+void StemPlayerAudioProcessorEditor::moved()
+{
+    saveWindowBounds();
+}
+
+void StemPlayerAudioProcessorEditor::saveWindowBounds()
+{
+    // Only save if we have a valid size
+    if (getWidth() > 0 && getHeight() > 0)
+    {
+        auto screenPos = getScreenPosition();
+        auto bounds = juce::Rectangle<int>(screenPos.x, screenPos.y, getWidth(), getHeight());
+        audioProcessor.getAppSettings().setWindowBounds(bounds);
+    }
 }
 
 void StemPlayerAudioProcessorEditor::timerCallback()

@@ -16,12 +16,15 @@ public:
 
     void paint(juce::Graphics&) override;
     void resized() override;
+    void moved() override;
     void timerCallback() override;
 
     void showScreen(StemPlayerAudioProcessor::Screen screen);
     void onSongSelected(const juce::String& songName, const juce::Array<juce::File>& stemFiles);
 
 private:
+    void saveWindowBounds();
+    
     StemPlayerAudioProcessor& audioProcessor;
     
     StemPlayerLookAndFeel customLookAndFeel;
