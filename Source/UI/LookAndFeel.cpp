@@ -9,7 +9,7 @@ const juce::Colour StemPlayerLookAndFeel::accentSecondary  = juce::Colour(0xff0f
 const juce::Colour StemPlayerLookAndFeel::textPrimary      = juce::Colour(0xffeaeaea);
 const juce::Colour StemPlayerLookAndFeel::textSecondary    = juce::Colour(0xff8888aa);
 const juce::Colour StemPlayerLookAndFeel::waveformColor    = juce::Colour(0xff6ee7b7);
-const juce::Colour StemPlayerLookAndFeel::playheadColor    = juce::Colour(0xfffbbf24);
+const juce::Colour StemPlayerLookAndFeel::playheadColor    = juce::Colour(0xffa0a0a0);
 
 StemPlayerLookAndFeel::StemPlayerLookAndFeel()
 {

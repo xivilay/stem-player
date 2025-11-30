@@ -147,14 +147,9 @@ void SelectionScreen::paint(juce::Graphics& g)
 {
     g.fillAll(StemPlayerLookAndFeel::backgroundDark);
     
-    // Subtle gradient at top
-    juce::ColourGradient gradient(
-        StemPlayerLookAndFeel::accentPrimary.withAlpha(0.08f), 
-        (float)getWidth() * 0.5f, 0,
-        juce::Colours::transparentBlack, 
-        (float)getWidth() * 0.5f, 60, false);
-    g.setGradientFill(gradient);
-    g.fillRect(getLocalBounds().removeFromTop(60));
+    // Header area - slightly lighter than main background
+    g.setColour(StemPlayerLookAndFeel::backgroundMedium.darker(0.3f));
+    g.fillRect(getLocalBounds().removeFromTop(50));
 }
 
 void SelectionScreen::resized()

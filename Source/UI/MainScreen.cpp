@@ -189,14 +189,9 @@ void MainScreen::paint(juce::Graphics& g)
 {
     g.fillAll(StemPlayerLookAndFeel::backgroundDark);
     
-    // Subtle gradient at top (header area)
-    juce::ColourGradient gradient(
-        StemPlayerLookAndFeel::accentSecondary.withAlpha(0.1f), 
-        (float)getWidth() * 0.5f, 0,
-        juce::Colours::transparentBlack, 
-        (float)getWidth() * 0.5f, 60, false);
-    g.setGradientFill(gradient);
-    g.fillRect(getLocalBounds().removeFromTop(60));
+    // Header area - slightly lighter than main background
+    g.setColour(StemPlayerLookAndFeel::backgroundMedium.darker(0.3f));
+    g.fillRect(getLocalBounds().removeFromTop(50));
 }
 
 void MainScreen::resized()

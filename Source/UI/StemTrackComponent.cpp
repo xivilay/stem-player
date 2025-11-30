@@ -164,34 +164,34 @@ void StemTrackComponent::resized()
 
 juce::Colour StemTrackComponent::getStemColor(int stemIndex)
 {
-    // Modern vibrant palette - returns the "light" accent color
+    // Muted waveform colors - less vibrant for lower contrast
     switch (stemIndex)
     {
-        case 0:  // Vocals - Coral/Salmon
-            return juce::Colour(0xffff6b6b);
-        case 1:  // Drums - Golden Yellow
-            return juce::Colour(0xfffeca57);
-        case 2:  // Bass - Electric Blue
-            return juce::Colour(0xff54a0ff);
-        case 3:  // Other - Mint Green
+        case 0:  // Vocals - Muted Coral
+            return juce::Colour(0xffb87070);
+        case 1:  // Drums - Muted Gold
+            return juce::Colour(0xffb8a060);
+        case 2:  // Bass - Muted Blue
+            return juce::Colour(0xff6088b0);
+        case 3:  // Other - Muted Green
         default:
-            return juce::Colour(0xff5cd85c);
+            return juce::Colour(0xff68a068);
     }
 }
 
 juce::Colour StemTrackComponent::getStemBackgroundColor(int stemIndex)
 {
-    // Dark versions of the palette colors for backgrounds
+    // Slightly tinted backgrounds - less dark for lower contrast
     switch (stemIndex)
     {
-        case 0:  // Vocals - Dark Coral
-            return juce::Colour(0xff2d1f1f);
-        case 1:  // Drums - Dark Gold
-            return juce::Colour(0xff2d2a1a);
-        case 2:  // Bass - Dark Blue
-            return juce::Colour(0xff1a2333);
-        case 3:  // Other - Dark Mint
+        case 0:  // Vocals - Warm dark
+            return juce::Colour(0xff282022);
+        case 1:  // Drums - Warm dark
+            return juce::Colour(0xff282520);
+        case 2:  // Bass - Cool dark
+            return juce::Colour(0xff202428);
+        case 3:  // Other - Neutral dark
         default:
-            return juce::Colour(0xff1a2d1a);
+            return juce::Colour(0xff222822);
     }
 }
