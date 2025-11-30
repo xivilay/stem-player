@@ -195,42 +195,43 @@ void MainScreen::paint(juce::Graphics& g)
 {
     g.fillAll(StemPlayerLookAndFeel::backgroundDark);
     
-    // Subtle gradient at top
+    // Subtle gradient at top (header area)
     juce::ColourGradient gradient(
-        StemPlayerLookAndFeel::accentSecondary.withAlpha(0.08f), 
+        StemPlayerLookAndFeel::accentSecondary.withAlpha(0.1f), 
         (float)getWidth() * 0.5f, 0,
         juce::Colours::transparentBlack, 
-        (float)getWidth() * 0.5f, 150, false);
+        (float)getWidth() * 0.5f, 60, false);
     g.setGradientFill(gradient);
-    g.fillRect(getLocalBounds().removeFromTop(150));
+    g.fillRect(getLocalBounds().removeFromTop(60));
 }
 
 void MainScreen::resized()
 {
     auto bounds = getLocalBounds();
     
-    // Header area
-    auto header = bounds.removeFromTop(120);
-    header.reduce(20, 15);
+    // Single header row with all controls
+    auto header = bounds.removeFromTop(50);
+    header.reduce(15, 8);
     
-    // Back button in top left
-    backButton.setBounds(header.removeFromLeft(80).removeFromTop(30));
-    header.removeFromLeft(10);
+    // Back button on left
+    backButton.setBounds(header.removeFromLeft(70));
+    header.removeFromLeft(15);
     
-    // Title and song name centered
-    auto titleArea = header.reduced(80, 0);
-    titleLabel.setBounds(titleArea.removeFromTop(20));
-    songNameLabel.setBounds(titleArea.removeFromTop(36));
+    // Time display on right
+    timeLabel.setBounds(header.removeFromRight(100));
+    header.removeFromRight(15);
     
-    // Transport controls
-    auto transportArea = titleArea.removeFromTop(50);
-    auto transportBounds = transportArea.withSizeKeepingCentre(300, 40);
+    // Stop button
+    stopButton.setBounds(header.removeFromRight(60));
+    header.removeFromRight(8);
     
-    playPauseButton.setBounds(transportBounds.removeFromLeft(90));
-    transportBounds.removeFromLeft(10);
-    stopButton.setBounds(transportBounds.removeFromLeft(70));
-    transportBounds.removeFromLeft(10);
-    timeLabel.setBounds(transportBounds);
+    // Play/Pause button
+    playPauseButton.setBounds(header.removeFromRight(80));
+    header.removeFromRight(20);
+    
+    // Song name takes remaining center space
+    titleLabel.setVisible(false);  // Hide "Now Playing" label to save space
+    songNameLabel.setBounds(header);
     
     // Tracks area
     bounds.removeFromTop(10);
