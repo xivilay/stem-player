@@ -97,18 +97,15 @@ SelectionScreen::SelectionScreen(StemPlayerAudioProcessor& processor,
     addAndMakeVisible(statusLabel);
     
     // Load button
-    loadButton.setButtonText("Load");
     loadButton.onClick = [this]() { loadSelectedSong(); };
     loadButton.setEnabled(false);
     addAndMakeVisible(loadButton);
     
     // Browse button
-    browseButton.setButtonText("Browse");
     browseButton.onClick = [this]() { browseForFolder(); };
     addAndMakeVisible(browseButton);
     
     // Settings button
-    settingsButton.setButtonText("Settings");
     settingsButton.onClick = [this]() {
         editor.showScreen(StemPlayerAudioProcessor::Screen::Settings);
     };
@@ -160,8 +157,8 @@ void SelectionScreen::resized()
     auto header = bounds.removeFromTop(50);
     header.reduce(15, 8);
     
-    // Settings button on right
-    settingsButton.setBounds(header.removeFromRight(70));
+    // Settings button on right (icon)
+    settingsButton.setBounds(header.removeFromRight(40));
     header.removeFromRight(8);
     
     // Browse button

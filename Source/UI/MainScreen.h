@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "StemTrackComponent.h"
+#include "IconButton.h"
 
 class StemPlayerAudioProcessor;
 class StemPlayerAudioProcessorEditor;
@@ -57,9 +58,9 @@ private:
     
     juce::Label titleLabel;
     juce::Label songNameLabel;
-    juce::TextButton backButton;
-    juce::TextButton playPauseButton;
-    juce::TextButton stopButton;
+    IconButton backButton { IconType::Back };
+    IconButton playPauseButton { IconType::Play };
+    IconButton stopButton { IconType::Stop };
     juce::Label timeLabel;
     
     juce::Viewport tracksViewport;

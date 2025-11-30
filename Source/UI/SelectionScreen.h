@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "../Core/StemDetector.h"
+#include "IconButton.h"
 
 class StemPlayerAudioProcessor;
 class StemPlayerAudioProcessorEditor;
@@ -52,9 +53,9 @@ private:
     StemDetector stemDetector;
     
     juce::Label folderLabel;
-    juce::TextButton browseButton;
-    juce::TextButton settingsButton;
-    juce::TextButton loadButton;
+    IconButton browseButton { IconType::Browse };
+    IconButton settingsButton { IconType::Settings };
+    IconButton loadButton { IconType::Load };
     
     juce::ListBox songListBox;
     SongListModel songListModel;

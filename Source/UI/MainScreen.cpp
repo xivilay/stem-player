@@ -86,7 +86,6 @@ MainScreen::MainScreen(StemPlayerAudioProcessor& processor,
     addAndMakeVisible(songNameLabel);
     
     // Back button
-    backButton.setButtonText("< Back");
     backButton.onClick = [this]() {
         audioProcessor.getStemEngine().stop();
         editor.showScreen(StemPlayerAudioProcessor::Screen::Selection);
@@ -94,7 +93,6 @@ MainScreen::MainScreen(StemPlayerAudioProcessor& processor,
     addAndMakeVisible(backButton);
     
     // Play/Pause button
-    playPauseButton.setButtonText("Play");
     playPauseButton.onClick = [this]() {
         audioProcessor.getStemEngine().togglePlayPause();
         updateTransportButtons();
@@ -102,7 +100,6 @@ MainScreen::MainScreen(StemPlayerAudioProcessor& processor,
     addAndMakeVisible(playPauseButton);
     
     // Stop button
-    stopButton.setButtonText("Stop");
     stopButton.onClick = [this]() {
         audioProcessor.getStemEngine().stop();
         updateTransportButtons();
@@ -202,20 +199,20 @@ void MainScreen::resized()
     auto header = bounds.removeFromTop(50);
     header.reduce(15, 8);
     
-    // Back button on left
-    backButton.setBounds(header.removeFromLeft(70));
+    // Back button on left (icon)
+    backButton.setBounds(header.removeFromLeft(40));
     header.removeFromLeft(15);
     
     // Time display on right
     timeLabel.setBounds(header.removeFromRight(100));
     header.removeFromRight(15);
     
-    // Stop button
-    stopButton.setBounds(header.removeFromRight(60));
+    // Stop button (icon)
+    stopButton.setBounds(header.removeFromRight(40));
     header.removeFromRight(8);
     
-    // Play/Pause button
-    playPauseButton.setBounds(header.removeFromRight(80));
+    // Play/Pause button (icon)
+    playPauseButton.setBounds(header.removeFromRight(40));
     header.removeFromRight(20);
     
     // Song name takes remaining center space
@@ -352,7 +349,7 @@ void MainScreen::updatePlaybackPosition()
 void MainScreen::updateTransportButtons()
 {
     bool isPlaying = audioProcessor.getStemEngine().isPlaying();
-    playPauseButton.setButtonText(isPlaying ? "Pause" : "Play");
+    playPauseButton.setIconType(isPlaying ? IconType::Pause : IconType::Play);
 }
 
 juce::String MainScreen::formatTime(double seconds)

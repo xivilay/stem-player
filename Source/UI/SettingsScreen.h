@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "../Core/StemDetector.h"
 #include "../Core/MidiLearnManager.h"
+#include "IconButton.h"
 
 class StemPlayerAudioProcessor;
 class StemPlayerAudioProcessorEditor;
@@ -89,7 +90,7 @@ private:
     StemPlayerAudioProcessor& audioProcessor;
     StemPlayerAudioProcessorEditor& editor;
     
-    juce::TextButton backButton;
+    IconButton backButton { IconType::Back };
     juce::Label titleLabel;
     
     // Main scrollable content

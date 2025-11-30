@@ -61,7 +61,23 @@ target_sources(StemPlayer
         Source/UI/StemTrackComponent.h
         Source/UI/LookAndFeel.cpp
         Source/UI/LookAndFeel.h
+        Source/UI/IconButton.cpp
+        Source/UI/IconButton.h
 )
+
+# Add icon resources as binary data
+juce_add_binary_data(IconResources
+    SOURCES
+        Resources/icons/back.svg
+        Resources/icons/play.svg
+        Resources/icons/pause.svg
+        Resources/icons/stop.svg
+        Resources/icons/settings.svg
+        Resources/icons/load.svg
+        Resources/icons/browse.svg
+)
+
+target_link_libraries(StemPlayer PRIVATE IconResources)
 
 juce_generate_juce_header(StemPlayer)
 

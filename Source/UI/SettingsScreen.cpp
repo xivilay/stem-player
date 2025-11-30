@@ -196,7 +196,6 @@ SettingsScreen::SettingsScreen(StemPlayerAudioProcessor& processor,
     editingPatterns = audioProcessor.getAppSettings().getStemRegexPatterns();
     
     // Back button (stays in main view, not scrollable)
-    backButton.setButtonText("< Back");
     backButton.onClick = [this]() {
         editor.showScreen(StemPlayerAudioProcessor::Screen::Selection);
     };
@@ -308,7 +307,7 @@ void SettingsScreen::resized()
     
     // Header row (fixed, not scrollable)
     auto header = bounds.removeFromTop(36);
-    backButton.setBounds(header.removeFromLeft(70));
+    backButton.setBounds(header.removeFromLeft(40));
     header.removeFromLeft(15);
     titleLabel.setBounds(header);
     
