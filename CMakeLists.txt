@@ -11,7 +11,7 @@ include(FetchContent)
 FetchContent_Declare(
     JUCE
     GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-    GIT_TAG 8.0.4
+    GIT_TAG 8.0.10
 )
 
 FetchContent_MakeAvailable(JUCE)
@@ -33,6 +33,7 @@ juce_add_plugin(StemPlayer
     ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/Resources/icon_128.png"
     
     # iOS specific settings
+    AU_SANDBOX_SAFE TRUE
     DOCUMENT_EXTENSIONS mp3 wav flac aiff m4a ogg
     IPHONE_SCREEN_ORIENTATIONS UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait
     IPAD_SCREEN_ORIENTATIONS UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown
