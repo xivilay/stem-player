@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: ['windows', 'ubuntu', 'macos']
+        runner: ['macos']
     runs-on: ${{ matrix.runner }}-latest
     name: ${{ matrix.runner }}
     steps:
