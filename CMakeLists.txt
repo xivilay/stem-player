@@ -18,14 +18,14 @@ FetchContent_MakeAvailable(JUCE)
 
 # Plugin/Standalone target
 juce_add_plugin(StemPlayer
-    COMPANY_NAME "StemPlayer"
+    COMPANY_NAME "XivilaY"
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS TRUE
     COPY_PLUGIN_AFTER_BUILD TRUE
-    PLUGIN_MANUFACTURER_CODE Stem
+    PLUGIN_MANUFACTURER_CODE XivY
     PLUGIN_CODE Stpl
     FORMATS AU VST3 Standalone
     PRODUCT_NAME "Stem Player"
