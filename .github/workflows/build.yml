@@ -24,9 +24,6 @@ jobs:
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_PAT }}
-          submodules: 'recursive'
         
       - name: Install Linux Deps
         if: runner.os == 'Linux'
