@@ -95,6 +95,28 @@ jobs:
           -D CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO \
           -D CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO
 
+      - name: Patch ${{ env.PROJECT_NAME }} Info.plist (iOS)
+        run: >
+          plutil 
+          -insert LSSupportsOpeningDocumentsInPlace 
+          -bool True 
+          ${{ env.BUILD_DIR }}_${{ env.IOS_NAME }}/src/${{ env.PROJECT_NAME }}/CMakeFiles/${{ env.PROJECT_NAME }}_Standalone.dir/Info.plist
+
+          plutil 
+          -insert UIFileSharingEnabled 
+          -bool True 
+          ${{ env.BUILD_DIR }}_${{ env.IOS_NAME }}/src/${{ env.PROJECT_NAME }}/CMakeFiles/${{ env.PROJECT_NAME }}_Standalone.dir/Info.plist
+
+          plutil 
+          -insert LSSupportsOpeningDocumentsInPlace 
+          -bool True 
+          ${{ env.BUILD_DIR }}_${{ env.IOS_NAME }}/src/${{ env.PROJECT_NAME }}/CMakeFiles/${{ env.PROJECT_NAME }}_AUv3.dir/Info.plist
+
+          plutil 
+          -insert UIFileSharingEnabled 
+          -bool True 
+          ${{ env.BUILD_DIR }}_${{ env.IOS_NAME }}/src/${{ env.PROJECT_NAME }}/CMakeFiles/${{ env.PROJECT_NAME }}_AUv3.dir/Info.plist
+
       - name: Build (iOS)
         if: runner.os == 'macOS'
         run: |
