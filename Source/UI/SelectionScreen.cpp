@@ -202,17 +202,36 @@ void SelectionScreen::refresh()
 
 void SelectionScreen::browseForFolder()
 {
+#if JUCE_IOS
+    // On iOS, default to Documents directory if no folder selected yet
+    juce::File startFolder = currentFolder;
+    if (!startFolder.isDirectory())
+        startFolder = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
+#else
+    juce::File startFolder = currentFolder;
+#endif
+    
     auto chooser = std::make_shared<juce::FileChooser>(
-        "Select Stems Folder", currentFolder, "", true);
+        "Select Stems Folder", startFolder, "", true);
     
     chooser->launchAsync(juce::FileBrowserComponent::openMode | 
                          juce::FileBrowserComponent::canSelectDirectories,
                          [this, chooser](const juce::FileChooser& fc) {
         auto result = fc.getResult();
-        if (result.isDirectory())
+        if (result.exists())
         {
-            currentFolder = result;
-            scanCurrentFolder();
+            // On iOS, the result might be a file in the folder we want
+            juce::File folder = result.isDirectory() ? result : result.getParentDirectory();
+            
+            if (folder.isDirectory())
+            {
+                currentFolder = folder;
+                
+                // Save the folder path for persistence
+                audioProcessor.getAppSettings().setDefaultFolder(currentFolder.getFullPathName());
+                
+                scanCurrentFolder();
+            }
         }
     });
 }
@@ -221,6 +240,17 @@ void SelectionScreen::scanCurrentFolder()
 {
     if (!currentFolder.isDirectory())
         return;
+    
+#if JUCE_IOS
+    // On iOS, we may need to access security-scoped resources
+    // The URL bookmark handling is done automatically by JUCE's FileChooser
+    // but we should ensure we have access
+    if (!currentFolder.hasReadAccess())
+    {
+        statusLabel.setText("Cannot access folder - permission denied", juce::dontSendNotification);
+        return;
+    }
+#endif
     
     folderLabel.setText(currentFolder.getFullPathName(), juce::dontSendNotification);
     

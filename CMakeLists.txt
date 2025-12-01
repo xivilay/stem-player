@@ -31,6 +31,14 @@ juce_add_plugin(StemPlayer
     PRODUCT_NAME "StemPlayer"
     ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/Resources/icon_512.png"
     ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/Resources/icon_128.png"
+    
+    # iOS specific settings
+    DOCUMENT_EXTENSIONS mp3 wav flac aiff m4a ogg
+    IPHONE_SCREEN_ORIENTATIONS UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait
+    IPAD_SCREEN_ORIENTATIONS UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown
+    FILE_SHARING_ENABLED TRUE
+    DOCUMENT_BROWSER_ENABLED TRUE
+    SUPPORTS_OPEN_DOCUMENTS_IN_PLACE TRUE
 )
 
 target_sources(StemPlayer
