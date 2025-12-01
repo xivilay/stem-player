@@ -29,6 +29,7 @@ juce_add_plugin(StemPlayer
     PLUGIN_CODE Stpl
     FORMATS AU VST3 Standalone
     PRODUCT_NAME "StemPlayer"
+    BUNDLE_ID "dev.xivilay.StemPlayer"
     ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/Resources/icon_512.png"
     ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/Resources/icon_128.png"
     
