@@ -203,16 +203,20 @@ void SelectionScreen::refresh()
 void SelectionScreen::browseForFolder()
 {
 #if JUCE_IOS
-    // On iOS, default to Documents directory if no folder selected yet
+    // On iOS 16+, folder selection requires navigating INTO the folder and tapping Open.
+    // As an alternative, we also allow selecting any audio file and use its parent folder.
     juce::File startFolder = currentFolder;
     if (!startFolder.isDirectory())
         startFolder = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
     
     auto chooser = std::make_shared<juce::FileChooser>(
-        "Select Stems Folder", startFolder, "", true);
+        "Select folder (navigate inside) or any stem file", startFolder, 
+        "*.mp3;*.wav;*.flac;*.aiff;*.m4a;*.ogg", true);
     
+    // Allow both folder selection AND file selection (will use parent folder)
     chooser->launchAsync(juce::FileBrowserComponent::openMode | 
-                         juce::FileBrowserComponent::canSelectDirectories,
+                         juce::FileBrowserComponent::canSelectDirectories | 
+                         juce::FileBrowserComponent::canSelectFiles,
                          [this, chooser](const juce::FileChooser& fc) {
         // On iOS, use URL result for security-scoped access
         auto urlResult = fc.getURLResult();
@@ -221,7 +225,8 @@ void SelectionScreen::browseForFolder()
         {
             juce::File result = urlResult.getLocalFile();
             
-            // Try to get the folder
+            // If user selected a file, use its parent folder
+            // If user selected a folder (from inside), use that
             juce::File folder = result.isDirectory() ? result : result.getParentDirectory();
             
             if (folder.exists())
@@ -243,7 +248,7 @@ void SelectionScreen::browseForFolder()
         else if (urlResult.toString(false).isNotEmpty())
         {
             // Handle non-local URLs (iCloud, etc.)
-            statusLabel.setText("Please select a local folder", juce::dontSendNotification);
+            statusLabel.setText("Please select a local folder or file", juce::dontSendNotification);
         }
     });
 #else
