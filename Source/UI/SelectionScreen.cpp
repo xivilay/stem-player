@@ -207,9 +207,47 @@ void SelectionScreen::browseForFolder()
     juce::File startFolder = currentFolder;
     if (!startFolder.isDirectory())
         startFolder = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
+    
+    auto chooser = std::make_shared<juce::FileChooser>(
+        "Select Stems Folder", startFolder, "", true);
+    
+    chooser->launchAsync(juce::FileBrowserComponent::openMode | 
+                         juce::FileBrowserComponent::canSelectDirectories,
+                         [this, chooser](const juce::FileChooser& fc) {
+        // On iOS, use URL result for security-scoped access
+        auto urlResult = fc.getURLResult();
+        
+        if (urlResult.isLocalFile())
+        {
+            juce::File result = urlResult.getLocalFile();
+            
+            // Try to get the folder
+            juce::File folder = result.isDirectory() ? result : result.getParentDirectory();
+            
+            if (folder.exists())
+            {
+                currentFolder = folder;
+                
+                // Save the folder path for persistence
+                audioProcessor.getAppSettings().setDefaultFolder(currentFolder.getFullPathName());
+                
+                folderLabel.setText("Folder: " + currentFolder.getFileName(), juce::dontSendNotification);
+                
+                scanCurrentFolder();
+            }
+            else
+            {
+                statusLabel.setText("Could not access selected folder", juce::dontSendNotification);
+            }
+        }
+        else if (urlResult.toString(false).isNotEmpty())
+        {
+            // Handle non-local URLs (iCloud, etc.)
+            statusLabel.setText("Please select a local folder", juce::dontSendNotification);
+        }
+    });
 #else
     juce::File startFolder = currentFolder;
-#endif
     
     auto chooser = std::make_shared<juce::FileChooser>(
         "Select Stems Folder", startFolder, "", true);
@@ -220,7 +258,6 @@ void SelectionScreen::browseForFolder()
         auto result = fc.getResult();
         if (result.exists())
         {
-            // On iOS, the result might be a file in the folder we want
             juce::File folder = result.isDirectory() ? result : result.getParentDirectory();
             
             if (folder.isDirectory())
@@ -234,21 +271,34 @@ void SelectionScreen::browseForFolder()
             }
         }
     });
+#endif
 }
 
 void SelectionScreen::scanCurrentFolder()
 {
-    if (!currentFolder.isDirectory())
+    if (!currentFolder.exists())
+    {
+        statusLabel.setText("Folder does not exist", juce::dontSendNotification);
         return;
+    }
+    
+    if (!currentFolder.isDirectory())
+    {
+        statusLabel.setText("Selected path is not a folder", juce::dontSendNotification);
+        return;
+    }
     
 #if JUCE_IOS
-    // On iOS, we may need to access security-scoped resources
-    // The URL bookmark handling is done automatically by JUCE's FileChooser
-    // but we should ensure we have access
-    if (!currentFolder.hasReadAccess())
+    // On iOS, check if we can access the folder
+    auto files = currentFolder.findChildFiles(juce::File::findFiles, false);
+    if (files.isEmpty())
     {
-        statusLabel.setText("Cannot access folder - permission denied", juce::dontSendNotification);
-        return;
+        // Try to check if it's a permission issue or just empty
+        if (!currentFolder.hasReadAccess())
+        {
+            statusLabel.setText("Cannot access folder - permission denied", juce::dontSendNotification);
+            return;
+        }
     }
 #endif
     

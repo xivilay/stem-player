@@ -95,6 +95,7 @@ target_compile_definitions(StemPlayer
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
         JUCE_DISPLAY_SPLASH_SCREEN=0
+        JUCE_CONTENT_SHARING=1
 )
 
 target_link_libraries(StemPlayer
