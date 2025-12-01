@@ -26,61 +26,61 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
         
-      - name: Install Linux Deps
-        if: runner.os == 'Linux'
-        run: |
-            sudo apt-get update &&  \
-            sudo apt install -y \
-              libasound2-dev \
-              libcurl4-openssl-dev \
-              libx11-dev \
-              libxinerama-dev \
-              libxext-dev \
-              libfreetype6-dev \
-              libwebkit2gtk-4.1-dev \
-              libglu1-mesa-dev
+      # - name: Install Linux Deps
+      #   if: runner.os == 'Linux'
+      #   run: |
+      #       sudo apt-get update &&  \
+      #       sudo apt install -y \
+      #         libasound2-dev \
+      #         libcurl4-openssl-dev \
+      #         libx11-dev \
+      #         libxinerama-dev \
+      #         libxext-dev \
+      #         libfreetype6-dev \
+      #         libwebkit2gtk-4.1-dev \
+      #         libglu1-mesa-dev
 
-      - name: Configure CMake
-        run: >
-          cmake
-          -B ${{ env.BUILD_DIR }}
-          -D CMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+      # - name: Configure CMake
+      #   run: >
+      #     cmake
+      #     -B ${{ env.BUILD_DIR }}
+      #     -D CMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
 
-      - name: Build
-        run: >
-          cmake
-          --build ${{ env.BUILD_DIR }}
-          --config ${{ env.BUILD_TYPE }}
+      # - name: Build
+      #   run: >
+      #     cmake
+      #     --build ${{ env.BUILD_DIR }}
+      #     --config ${{ env.BUILD_TYPE }}
 
-      - name: Zip (Mac)
-        if: runner.os == 'macOS'
-        working-directory: ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}
-        run: >
-          cmake
-          -E tar cv ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_${{ matrix.runner }}.7z
-          --format=7zip
-          Standalone/
-          VST3/${{ env.PROJECT_NAME }}.vst3
-          AU/${{ env.PROJECT_NAME }}.component
+      # - name: Zip (Mac)
+      #   if: runner.os == 'macOS'
+      #   working-directory: ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}
+      #   run: >
+      #     cmake
+      #     -E tar cv ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_${{ matrix.runner }}.7z
+      #     --format=7zip
+      #     Standalone/
+      #     VST3/${{ env.PROJECT_NAME }}.vst3
+      #     AU/${{ env.PROJECT_NAME }}.component
 
-      - name: Zip (non Mac)
-        if: runner.os != 'macOS'
-        working-directory: ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}
-        run: >
-          cmake
-          -E tar cv ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_${{ matrix.runner }}.7z
-          --format=7zip
-          Standalone/
-          LV2/${{ env.PROJECT_NAME }}.lv2
-          VST3/${{ env.PROJECT_NAME }}.vst3
+      # - name: Zip (non Mac)
+      #   if: runner.os != 'macOS'
+      #   working-directory: ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}
+      #   run: >
+      #     cmake
+      #     -E tar cv ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_${{ matrix.runner }}.7z
+      #     --format=7zip
+      #     Standalone/
+      #     LV2/${{ env.PROJECT_NAME }}.lv2
+      #     VST3/${{ env.PROJECT_NAME }}.vst3
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.PROJECT_NAME }}_${{ matrix.runner }}
-          path: ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_${{ matrix.runner }}.7z
-          if-no-files-found: error
-          retention-days: 1
+      # - name: Upload artifacts
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: ${{ env.PROJECT_NAME }}_${{ matrix.runner }}
+      #     path: ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_${{ matrix.runner }}.7z
+      #     if-no-files-found: error
+      #     retention-days: 1
 
       - name: Configure CMake (iOS)
         if: runner.os == 'macOS'
