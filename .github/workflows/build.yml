@@ -105,17 +105,7 @@ jobs:
           plutil 
           -insert UIFileSharingEnabled 
           -bool True 
-          ${{ env.BUILD_DIR }}_${{ env.IOS_NAME }}/${{ env.PROJECT_NAME }}_Standalone.dir/Info.plist
-
-          plutil 
-          -insert LSSupportsOpeningDocumentsInPlace 
-          -bool True 
-          ${{ env.BUILD_DIR }}_${{ env.IOS_NAME }}/${{ env.PROJECT_NAME }}_AUv3.dir/Info.plist
-
-          plutil 
-          -insert UIFileSharingEnabled 
-          -bool True 
-          ${{ env.BUILD_DIR }}_${{ env.IOS_NAME }}/${{ env.PROJECT_NAME }}_AUv3.dir/Info.plist
+          ${{ env.BUILD_DIR }}_${{ env.IOS_NAME }}/CMakeFiles/${{ env.PROJECT_NAME }}_Standalone.dir/Info.plist
 
       - name: Build (iOS)
         if: runner.os == 'macOS'
