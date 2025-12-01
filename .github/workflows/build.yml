@@ -11,7 +11,7 @@ on:
 env:
   BUILD_TYPE: Release
   BUILD_DIR: ${{ github.workspace }}/build
-  PROJECT_NAME: Stem Player
+  PROJECT_NAME: StemPlayer
   IOS_NAME: iOS
 
 jobs:
