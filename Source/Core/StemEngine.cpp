@@ -15,7 +15,7 @@ void StemEngine::prepareToPlay(double sampleRate, int samplesPerBlock)
     currentSampleRate = sampleRate;
     currentBlockSize = samplesPerBlock;
     
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < NUM_STEM_TYPES; ++i)
     {
         if (tracks[i] != nullptr)
             tracks[i]->prepareToPlay(sampleRate, samplesPerBlock);
@@ -24,7 +24,7 @@ void StemEngine::prepareToPlay(double sampleRate, int samplesPerBlock)
 
 void StemEngine::releaseResources()
 {
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < NUM_STEM_TYPES; ++i)
     {
         if (tracks[i] != nullptr)
             tracks[i]->releaseResources();
@@ -38,7 +38,7 @@ void StemEngine::processBlock(juce::AudioBuffer<float>& buffer)
     buffer.clear();
     
     bool hasAnyTrack = false;
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < NUM_STEM_TYPES; ++i)
     {
         if (trackLoaded[i])
         {
@@ -61,7 +61,7 @@ void StemEngine::processBlock(juce::AudioBuffer<float>& buffer)
     
     // Check if any track is soloed
     bool anySolo = false;
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < NUM_STEM_TYPES; ++i)
     {
         if (tracks[i] != nullptr && tracks[i]->isSolo())
         {
@@ -73,7 +73,7 @@ void StemEngine::processBlock(juce::AudioBuffer<float>& buffer)
     // Temporary buffer for each track
     juce::AudioBuffer<float> trackBuffer(buffer.getNumChannels(), buffer.getNumSamples());
     
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < NUM_STEM_TYPES; ++i)
     {
         if (tracks[i] == nullptr || !tracks[i]->isLoaded())
             continue;
@@ -98,8 +98,8 @@ void StemEngine::processBlock(juce::AudioBuffer<float>& buffer)
     currentPosition = pos + buffer.getNumSamples();
 }
 
-void StemEngine::loadSong(const juce::String& name, const std::array<juce::File, 4>& stemFiles,
-                          const std::array<bool, 4>& stemFound)
+void StemEngine::loadSong(const juce::String& name, const std::array<juce::File, NUM_STEM_TYPES>& stemFiles,
+                          const std::array<bool, NUM_STEM_TYPES>& stemFound)
 {
     juce::ScopedLock sl(processLock);
     
@@ -108,7 +108,7 @@ void StemEngine::loadSong(const juce::String& name, const std::array<juce::File,
     
     currentSongName = name;
     
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < NUM_STEM_TYPES; ++i)
     {
         trackLoaded[i] = false;
         tracks[i].reset();
@@ -145,7 +145,7 @@ void StemEngine::unloadSong()
     totalLengthInSamples = 0;
     currentSongName.clear();
     
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < NUM_STEM_TYPES; ++i)
     {
         tracks[i].reset();
         trackLoaded[i] = false;
@@ -155,7 +155,7 @@ void StemEngine::unloadSong()
 void StemEngine::play()
 {
     bool hasAnyTrack = false;
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < NUM_STEM_TYPES; ++i)
     {
         if (trackLoaded[i])
         {
@@ -239,14 +239,14 @@ double StemEngine::getTotalLengthInSeconds() const
 
 StemTrack* StemEngine::getTrack(int index)
 {
-    if (index >= 0 && index < 4)
+    if (index >= 0 && index < NUM_STEM_TYPES)
         return tracks[index].get();
     return nullptr;
 }
 
 bool StemEngine::isTrackLoaded(int index) const
 {
-    if (index >= 0 && index < 4)
+    if (index >= 0 && index < NUM_STEM_TYPES)
         return trackLoaded[index];
     return false;
 }
@@ -259,7 +259,7 @@ void StemEngine::setTrackVolume(int trackIndex, float volume)
 
 float StemEngine::getTrackVolume(int trackIndex) const
 {
-    if (trackIndex >= 0 && trackIndex < 4 && tracks[trackIndex] != nullptr)
+    if (trackIndex >= 0 && trackIndex < NUM_STEM_TYPES && tracks[trackIndex] != nullptr)
         return tracks[trackIndex]->getVolume();
     return 0.0f;
 }

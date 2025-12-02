@@ -11,6 +11,7 @@ enum class MidiControlType
     Stem3Volume,
     Stem4Volume,
     Stem5Volume,
+    Stem6Volume,
     PlayPause,
     Stop,
     Rewind,

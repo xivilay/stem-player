@@ -49,7 +49,9 @@ void AppSettings::loadSettings()
             stemRegexPatterns[0] = patternsElement->getStringAttribute("vocals", defaults[0]);
             stemRegexPatterns[1] = patternsElement->getStringAttribute("drums", defaults[1]);
             stemRegexPatterns[2] = patternsElement->getStringAttribute("bass", defaults[2]);
-            stemRegexPatterns[3] = patternsElement->getStringAttribute("other", defaults[3]);
+            stemRegexPatterns[3] = patternsElement->getStringAttribute("guitar", defaults[3]);
+            stemRegexPatterns[4] = patternsElement->getStringAttribute("piano", defaults[4]);
+            stemRegexPatterns[5] = patternsElement->getStringAttribute("other", defaults[5]);
         }
     }
 }
@@ -75,7 +77,9 @@ void AppSettings::saveSettings()
     patternsElement->setAttribute("vocals", stemRegexPatterns[0]);
     patternsElement->setAttribute("drums", stemRegexPatterns[1]);
     patternsElement->setAttribute("bass", stemRegexPatterns[2]);
-    patternsElement->setAttribute("other", stemRegexPatterns[3]);
+    patternsElement->setAttribute("guitar", stemRegexPatterns[3]);
+    patternsElement->setAttribute("piano", stemRegexPatterns[4]);
+    patternsElement->setAttribute("other", stemRegexPatterns[5]);
     
     auto file = getSettingsFile();
     xml->writeTo(file);
@@ -87,7 +91,7 @@ void AppSettings::setDefaultFolder(const juce::String& folder)
     saveSettings();
 }
 
-void AppSettings::setStemRegexPatterns(const std::array<juce::String, 4>& patterns)
+void AppSettings::setStemRegexPatterns(const std::array<juce::String, NUM_STEM_TYPES>& patterns)
 {
     stemRegexPatterns = patterns;
     saveSettings();

@@ -45,6 +45,9 @@ public:
     // Get the waveform bounds relative to parent for overlay positioning
     juce::Rectangle<int> getWaveformBounds() const;
     
+    // Get the stem type index (0=Vocals, 1=Drums, 2=Bass, 3=Other)
+    int getTrackIndex() const { return trackIndex; }
+    
     void paint(juce::Graphics& g) override;
     void resized() override;
     

@@ -13,7 +13,7 @@ StemDetector::StemDetector()
     audioExtensions.add(".m4a");
 }
 
-std::array<juce::String, 4> StemDetector::getDefaultPatterns()
+std::array<juce::String, NUM_STEM_TYPES> StemDetector::getDefaultPatterns()
 {
     return {
         // Vocals: matches _vocal, _vocals, (Vocal), (Vocals), -vocal, -vocals (case insensitive)
@@ -22,6 +22,10 @@ std::array<juce::String, 4> StemDetector::getDefaultPatterns()
         R"([\s_\-\(](drums?)\)?)",
         // Bass: matches _bass, (Bass), -bass
         R"([\s_\-\(](bass)\)?)",
+        // Guitar: matches _guitar, (Guitar), -guitar
+        R"([\s_\-\(](guitar)\)?)",
+        // Piano: matches _piano, (Piano), -piano, _keys, (Keys), -keys
+        R"([\s_\-\(](piano|keys)\)?)",
         // Other: matches _other, (Other), -other, _inst, _instrumental
         R"([\s_\-\(](other|inst(rumental)?)\)?)"
     };
@@ -34,6 +38,8 @@ juce::String StemDetector::getStemTypeName(StemType type)
         case StemType::Vocals: return "Vocals";
         case StemType::Drums:  return "Drums";
         case StemType::Bass:   return "Bass";
+        case StemType::Guitar: return "Guitar";
+        case StemType::Piano:  return "Piano";
         case StemType::Other:  return "Other";
         default: return "Unknown";
     }
@@ -41,12 +47,12 @@ juce::String StemDetector::getStemTypeName(StemType type)
 
 juce::String StemDetector::getStemTypeName(int index)
 {
-    if (index >= 0 && index < 4)
+    if (index >= 0 && index < NUM_STEM_TYPES)
         return getStemTypeName(static_cast<StemType>(index));
     return "Unknown";
 }
 
-void StemDetector::setPatterns(const std::array<juce::String, 4>& patterns)
+void StemDetector::setPatterns(const std::array<juce::String, NUM_STEM_TYPES>& patterns)
 {
     regexPatterns = patterns;
 }
@@ -76,8 +82,8 @@ bool StemDetector::matchesPattern(const juce::String& filename, const juce::Stri
 
 StemType StemDetector::detectStemType(const juce::String& filename) const
 {
-    // Check each stem type in order
-    for (int i = 0; i < 4; ++i)
+    // Check each stem type in order (excluding Other which is the fallback)
+    for (int i = 0; i < NUM_STEM_TYPES - 1; ++i)
     {
         if (matchesPattern(filename, regexPatterns[i]))
             return static_cast<StemType>(i);
@@ -159,7 +165,7 @@ juce::Array<DetectedSong> StemDetector::scanDirectory(const juce::File& director
     for (auto& pair : songMap)
     {
         bool hasAnyStem = false;
-        for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < NUM_STEM_TYPES; ++i)
         {
             if (pair.second.stemFound[i])
             {

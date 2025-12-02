@@ -94,8 +94,8 @@ void StemPlayerAudioProcessorEditor::showScreen(StemPlayerAudioProcessor::Screen
 }
 
 void StemPlayerAudioProcessorEditor::onSongSelected(const juce::String& songName, 
-                                                     const std::array<juce::File, 4>& stemFiles,
-                                                     const std::array<bool, 4>& stemFound)
+                                                     const std::array<juce::File, NUM_STEM_TYPES>& stemFiles,
+                                                     const std::array<bool, NUM_STEM_TYPES>& stemFound)
 {
     audioProcessor.getStemEngine().loadSong(songName, stemFiles, stemFound);
     mainScreen->songLoaded(songName);

@@ -47,7 +47,7 @@ void SongListModel::paintListBoxItem(int rowNumber, juce::Graphics& g,
     // Show which stems are available
     juce::String stemInfo;
     int stemCount = 0;
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < NUM_STEM_TYPES; ++i)
     {
         if (song.stemFound[i])
         {

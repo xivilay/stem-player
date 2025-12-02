@@ -16,11 +16,12 @@ juce::String MidiLearnManager::getControlName(MidiControlType type)
 {
     switch (type)
     {
-        case MidiControlType::Stem1Volume: return "Stem 1 Volume";
-        case MidiControlType::Stem2Volume: return "Stem 2 Volume";
-        case MidiControlType::Stem3Volume: return "Stem 3 Volume";
-        case MidiControlType::Stem4Volume: return "Stem 4 Volume";
-        case MidiControlType::Stem5Volume: return "Stem 5 Volume";
+        case MidiControlType::Stem1Volume: return "Vocals Volume";
+        case MidiControlType::Stem2Volume: return "Drums Volume";
+        case MidiControlType::Stem3Volume: return "Bass Volume";
+        case MidiControlType::Stem4Volume: return "Guitar Volume";
+        case MidiControlType::Stem5Volume: return "Piano Volume";
+        case MidiControlType::Stem6Volume: return "Other Volume";
         case MidiControlType::PlayPause:   return "Play/Pause";
         case MidiControlType::Stop:        return "Stop";
         case MidiControlType::Rewind:      return "Rewind";
@@ -96,6 +97,9 @@ void MidiLearnManager::processMidiMessages(const juce::MidiBuffer& midiMessages,
                             break;
                         case MidiControlType::Stem5Volume:
                             engine.setTrackVolume(4, value);
+                            break;
+                        case MidiControlType::Stem6Volume:
+                            engine.setTrackVolume(5, value);
                             break;
                         case MidiControlType::PlayPause:
                             if (value > 0.5f)

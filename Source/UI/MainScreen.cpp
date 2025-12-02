@@ -264,15 +264,17 @@ void MainScreen::createTrackComponents()
     
     auto& engine = audioProcessor.getStemEngine();
     
-    // Always create 4 tracks in fixed order: Vocals, Drums, Bass, Other
-    for (int i = 0; i < 4; ++i)
+    // Only create tracks for stems that are loaded, keeping the fixed order
+    for (int i = 0; i < NUM_STEM_TYPES; ++i)
     {
+        if (!engine.isTrackLoaded(i))
+            continue;  // Skip unloaded stems
+        
         auto trackComp = std::make_unique<StemTrackComponent>(i);
         
-        // Set track (may be nullptr if stem not found)
         trackComp->setTrack(engine.getTrack(i));
         trackComp->setDrawPlayhead(false);  // Disable individual playheads
-        trackComp->setTrackLoaded(engine.isTrackLoaded(i));
+        trackComp->setTrackLoaded(true);
         
         trackComp->onVolumeChanged = [this](int trackIndex, float volume) {
             audioProcessor.getStemEngine().setTrackVolume(trackIndex, volume);
@@ -337,10 +339,11 @@ void MainScreen::updatePlaybackPosition()
                       juce::dontSendNotification);
     
     // Update stem volumes from MIDI (in case they changed via MIDI)
-    for (size_t i = 0; i < trackComponents.size(); ++i)
+    for (auto& trackComp : trackComponents)
     {
-        if (auto* track = engine.getTrack(static_cast<int>(i)))
-            trackComponents[i]->setVolume(track->getVolume());
+        int stemIndex = trackComp->getTrackIndex();
+        if (auto* track = engine.getTrack(stemIndex))
+            trackComp->setVolume(track->getVolume());
     }
     
     updateTransportButtons();

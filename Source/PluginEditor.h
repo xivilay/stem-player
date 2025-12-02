@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "Core/StemDetector.h"
 #include "UI/SelectionScreen.h"
 #include "UI/MainScreen.h"
 #include "UI/SettingsScreen.h"
@@ -20,8 +21,8 @@ public:
     void timerCallback() override;
 
     void showScreen(StemPlayerAudioProcessor::Screen screen);
-    void onSongSelected(const juce::String& songName, const std::array<juce::File, 4>& stemFiles, 
-                        const std::array<bool, 4>& stemFound);
+    void onSongSelected(const juce::String& songName, const std::array<juce::File, NUM_STEM_TYPES>& stemFiles, 
+                        const std::array<bool, NUM_STEM_TYPES>& stemFound);
 
 private:
     void saveWindowBounds();

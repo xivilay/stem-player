@@ -63,7 +63,7 @@ class StemPatternRow : public juce::Component,
                         public juce::TextEditor::Listener
 {
 public:
-    StemPatternRow(int stemIndex, std::array<juce::String, 4>& patterns,
+    StemPatternRow(int stemIndex, std::array<juce::String, NUM_STEM_TYPES>& patterns,
                    std::function<void()> onChanged);
     ~StemPatternRow() override;
     
@@ -79,7 +79,7 @@ private:
     void applyTextValue();
     
     int stemIndex;
-    std::array<juce::String, 4>& patterns;
+    std::array<juce::String, NUM_STEM_TYPES>& patterns;
     std::function<void()> onChange;
     
     juce::Label nameLabel;
@@ -131,9 +131,9 @@ private:
     
     // Stem patterns section
     juce::Label patternsSectionLabel;
-    std::array<std::unique_ptr<StemPatternRow>, 4> patternRows;
+    std::array<std::unique_ptr<StemPatternRow>, NUM_STEM_TYPES> patternRows;
     juce::TextButton resetPatternsButton;
-    std::array<juce::String, 4> editingPatterns;
+    std::array<juce::String, NUM_STEM_TYPES> editingPatterns;
     
     // MIDI assignment section
     juce::Label midiSectionLabel;

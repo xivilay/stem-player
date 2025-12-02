@@ -14,8 +14,8 @@ public:
     void releaseResources();
     void processBlock(juce::AudioBuffer<float>& buffer);
     
-    void loadSong(const juce::String& name, const std::array<juce::File, 4>& stemFiles,
-                  const std::array<bool, 4>& stemFound);
+    void loadSong(const juce::String& name, const std::array<juce::File, NUM_STEM_TYPES>& stemFiles,
+                  const std::array<bool, NUM_STEM_TYPES>& stemFound);
     void unloadSong();
     
     void play();
@@ -37,7 +37,7 @@ public:
     
     const juce::String& getCurrentSongName() const { return currentSongName; }
     
-    static constexpr int getNumTracks() { return 4; }
+    static constexpr int getNumTracks() { return NUM_STEM_TYPES; }
     StemTrack* getTrack(int index);
     bool isTrackLoaded(int index) const;
     
@@ -50,8 +50,8 @@ private:
     juce::AudioFormatManager formatManager;
     
     juce::String currentSongName;
-    std::array<std::unique_ptr<StemTrack>, 4> tracks;
-    std::array<bool, 4> trackLoaded { false, false, false, false };
+    std::array<std::unique_ptr<StemTrack>, NUM_STEM_TYPES> tracks;
+    std::array<bool, NUM_STEM_TYPES> trackLoaded { false, false, false, false, false, false };
     
     std::atomic<bool> playing { false };
     std::atomic<int64_t> currentPosition { 0 };

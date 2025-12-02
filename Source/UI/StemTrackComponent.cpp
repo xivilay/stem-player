@@ -235,7 +235,11 @@ juce::Colour StemTrackComponent::getStemColor(int stemIndex)
             return juce::Colour(0xffb8a060);
         case 2:  // Bass - Muted Blue
             return juce::Colour(0xff6088b0);
-        case 3:  // Other - Muted Green
+        case 3:  // Guitar - Muted Orange
+            return juce::Colour(0xffc89058);
+        case 4:  // Piano - Muted Purple
+            return juce::Colour(0xff9878a8);
+        case 5:  // Other - Muted Green
         default:
             return juce::Colour(0xff68a068);
     }
@@ -252,7 +256,11 @@ juce::Colour StemTrackComponent::getStemBackgroundColor(int stemIndex)
             return juce::Colour(0xff282520);
         case 2:  // Bass - Cool dark
             return juce::Colour(0xff202428);
-        case 3:  // Other - Neutral dark
+        case 3:  // Guitar - Warm orange dark
+            return juce::Colour(0xff282420);
+        case 4:  // Piano - Purple dark
+            return juce::Colour(0xff242028);
+        case 5:  // Other - Neutral dark
         default:
             return juce::Colour(0xff222822);
     }

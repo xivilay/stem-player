@@ -180,7 +180,7 @@ void MidiAssignmentRow::applyTextValue()
 }
 
 // StemPatternRow implementation
-StemPatternRow::StemPatternRow(int index, std::array<juce::String, 4>& pats,
+StemPatternRow::StemPatternRow(int index, std::array<juce::String, NUM_STEM_TYPES>& pats,
                                 std::function<void()> onChanged)
     : stemIndex(index), patterns(pats), onChange(onChanged)
 {
@@ -222,7 +222,7 @@ void StemPatternRow::resized()
 
 void StemPatternRow::updateFromPatterns()
 {
-    if (stemIndex >= 0 && stemIndex < 4)
+    if (stemIndex >= 0 && stemIndex < NUM_STEM_TYPES)
         regexEditor.setText(patterns[stemIndex], juce::dontSendNotification);
 }
 
@@ -240,7 +240,7 @@ void StemPatternRow::textEditorFocusLost(juce::TextEditor&)
 
 void StemPatternRow::applyTextValue()
 {
-    if (stemIndex >= 0 && stemIndex < 4)
+    if (stemIndex >= 0 && stemIndex < NUM_STEM_TYPES)
     {
         patterns[stemIndex] = regexEditor.getText();
         if (onChange)
@@ -325,7 +325,7 @@ SettingsScreen::SettingsScreen(StemPlayerAudioProcessor& processor,
     patternsSectionLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textPrimary);
     contentContainer.addAndMakeVisible(patternsSectionLabel);
     
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < NUM_STEM_TYPES; ++i)
     {
         patternRows[i] = std::make_unique<StemPatternRow>(i, editingPatterns, 
                                                           [this]() { savePatterns(); });
@@ -420,7 +420,7 @@ void SettingsScreen::layoutContent()
     patternsSectionLabel.setBounds(0, y, contentWidth, 20);
     y += 24;
     
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < NUM_STEM_TYPES; ++i)
     {
         patternRows[i]->setBounds(0, y, contentWidth, 28);
         y += 30;
@@ -476,7 +476,7 @@ void SettingsScreen::updateMidiRows()
 
 void SettingsScreen::updatePatternRows()
 {
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < NUM_STEM_TYPES; ++i)
         patternRows[i]->updateFromPatterns();
 }
 
