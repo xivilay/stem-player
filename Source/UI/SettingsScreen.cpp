@@ -3,6 +3,10 @@
 #include "../PluginEditor.h"
 #include "LookAndFeel.h"
 
+#if JucePlugin_Build_Standalone
+#include <juce_audio_plugin_client/Standalone/juce_StandaloneFilterWindow.h>
+#endif
+
 // MidiAssignmentRow implementation
 MidiAssignmentRow::MidiAssignmentRow(MidiControlType type, MidiLearnManager& manager)
     : controlType(type), midiManager(manager)
@@ -208,6 +212,11 @@ SettingsScreen::SettingsScreen(StemPlayerAudioProcessor& processor,
     titleLabel.setJustificationType(juce::Justification::centredLeft);
     addAndMakeVisible(titleLabel);
     
+    // Audio settings button (in header, right side)
+    audioSettingsButton.setButtonText("Audio Settings...");
+    audioSettingsButton.onClick = [this]() { showAudioSettings(); };
+    addAndMakeVisible(audioSettingsButton);
+    
     // Scrollable content viewport
     contentViewport.setViewedComponent(&contentContainer, false);
     contentViewport.setScrollBarsShown(true, false);
@@ -309,6 +318,11 @@ void SettingsScreen::resized()
     auto header = bounds.removeFromTop(36);
     backButton.setBounds(header.removeFromLeft(40));
     header.removeFromLeft(15);
+    
+    // Audio settings button on the right
+    audioSettingsButton.setBounds(header.removeFromRight(120));
+    header.removeFromRight(10);
+    
     titleLabel.setBounds(header);
     
     bounds.removeFromTop(15);
@@ -423,4 +437,19 @@ void SettingsScreen::resetPatternsToDefault()
 void SettingsScreen::savePatterns()
 {
     audioProcessor.getAppSettings().setStemRegexPatterns(editingPatterns);
+}
+
+void SettingsScreen::showAudioSettings()
+{
+#if JucePlugin_Build_Standalone
+    if (auto* holder = StandalonePluginHolder::getInstance())
+    {
+        holder->showAudioSettingsDialog();
+    }
+#else
+    juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::InfoIcon,
+                                           "Audio Settings",
+                                           "Audio device settings are only available in standalone mode.\n"
+                                           "When running as a plugin, audio settings are managed by the host.");
+#endif
 }

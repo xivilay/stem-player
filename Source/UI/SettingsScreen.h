@@ -80,6 +80,7 @@ public:
     void visibilityChanged() override;
 
 private:
+    void showAudioSettings();
     void browseForDefaultFolder();
     void resetPatternsToDefault();
     void savePatterns();
@@ -92,6 +93,7 @@ private:
     
     IconButton backButton { IconType::Back };
     juce::Label titleLabel;
+    juce::TextButton audioSettingsButton;
     
     // Main scrollable content
     juce::Viewport contentViewport;
