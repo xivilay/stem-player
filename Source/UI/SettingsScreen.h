@@ -8,6 +8,26 @@
 class StemPlayerAudioProcessor;
 class StemPlayerAudioProcessorEditor;
 
+// Custom audio settings panel with close button (for iOS compatibility)
+class AudioSettingsPanel : public juce::Component
+{
+public:
+    AudioSettingsPanel(juce::AudioDeviceManager& deviceManager, 
+                       std::function<void()> onClose);
+    ~AudioSettingsPanel() override = default;
+    
+    void paint(juce::Graphics& g) override;
+    void resized() override;
+    
+private:
+    std::unique_ptr<juce::AudioDeviceSelectorComponent> deviceSelector;
+    juce::TextButton closeButton;
+    juce::Label titleLabel;
+    std::function<void()> closeCallback;
+    
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioSettingsPanel)
+};
+
 // Individual MIDI assignment row
 class MidiAssignmentRow : public juce::Component,
                            public juce::TextEditor::Listener
@@ -118,6 +138,9 @@ private:
     // MIDI assignment section
     juce::Label midiSectionLabel;
     std::vector<std::unique_ptr<MidiAssignmentRow>> midiRows;
+    
+    // Audio settings overlay
+    std::unique_ptr<AudioSettingsPanel> audioSettingsPanel;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SettingsScreen)
 };

@@ -7,6 +7,63 @@
 #include <juce_audio_plugin_client/Standalone/juce_StandaloneFilterWindow.h>
 #endif
 
+// AudioSettingsPanel implementation
+AudioSettingsPanel::AudioSettingsPanel(juce::AudioDeviceManager& deviceManager,
+                                       std::function<void()> onClose)
+    : closeCallback(onClose)
+{
+    // Title
+    titleLabel.setText("Audio Settings", juce::dontSendNotification);
+    titleLabel.setFont(juce::Font(20.0f, juce::Font::bold));
+    titleLabel.setColour(juce::Label::textColourId, StemPlayerLookAndFeel::textPrimary);
+    titleLabel.setJustificationType(juce::Justification::centredLeft);
+    addAndMakeVisible(titleLabel);
+    
+    // Close button
+    closeButton.setButtonText("Done");
+    closeButton.onClick = [this]() {
+        if (closeCallback)
+            closeCallback();
+    };
+    addAndMakeVisible(closeButton);
+    
+    // Audio device selector
+    deviceSelector = std::make_unique<juce::AudioDeviceSelectorComponent>(
+        deviceManager,
+        0, 2,    // min/max input channels
+        0, 2,    // min/max output channels
+        false,   // show MIDI input options
+        false,   // show MIDI output options
+        false,   // show channels as stereo pairs
+        false    // hide advanced options
+    );
+    addAndMakeVisible(deviceSelector.get());
+}
+
+void AudioSettingsPanel::paint(juce::Graphics& g)
+{
+    g.fillAll(StemPlayerLookAndFeel::backgroundDark);
+    
+    // Draw border at top
+    g.setColour(StemPlayerLookAndFeel::backgroundLight);
+    g.fillRect(0, 0, getWidth(), 1);
+}
+
+void AudioSettingsPanel::resized()
+{
+    auto bounds = getLocalBounds();
+    
+    // Header
+    auto header = bounds.removeFromTop(50).reduced(15, 10);
+    closeButton.setBounds(header.removeFromRight(70));
+    header.removeFromRight(10);
+    titleLabel.setBounds(header);
+    
+    // Device selector takes remaining space
+    bounds.reduce(10, 5);
+    deviceSelector->setBounds(bounds);
+}
+
 // MidiAssignmentRow implementation
 MidiAssignmentRow::MidiAssignmentRow(MidiControlType type, MidiLearnManager& manager)
     : controlType(type), midiManager(manager)
@@ -332,6 +389,10 @@ void SettingsScreen::resized()
     
     // Layout the content
     layoutContent();
+    
+    // Resize audio settings panel if visible
+    if (audioSettingsPanel != nullptr)
+        audioSettingsPanel->setBounds(getLocalBounds());
 }
 
 void SettingsScreen::layoutContent()
@@ -396,6 +457,15 @@ void SettingsScreen::visibilityChanged()
         // Reset scroll position
         contentViewport.setViewPosition(0, 0);
     }
+    else
+    {
+        // Close audio settings panel when navigating away
+        if (audioSettingsPanel != nullptr)
+        {
+            removeChildComponent(audioSettingsPanel.get());
+            audioSettingsPanel.reset();
+        }
+    }
 }
 
 void SettingsScreen::updateMidiRows()
@@ -444,7 +514,23 @@ void SettingsScreen::showAudioSettings()
 #if JucePlugin_Build_Standalone
     if (auto* holder = StandalonePluginHolder::getInstance())
     {
-        holder->showAudioSettingsDialog();
+        // Create custom audio settings panel with close button
+        audioSettingsPanel = std::make_unique<AudioSettingsPanel>(
+            holder->deviceManager,
+            [this]() {
+                // Close the panel
+                if (audioSettingsPanel != nullptr)
+                {
+                    removeChildComponent(audioSettingsPanel.get());
+                    audioSettingsPanel.reset();
+                }
+            }
+        );
+        
+        // Add as overlay covering the whole screen
+        addAndMakeVisible(audioSettingsPanel.get());
+        audioSettingsPanel->setBounds(getLocalBounds());
+        audioSettingsPanel->toFront(true);
     }
 #else
     juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::InfoIcon,
